@@ -44,7 +44,7 @@ B-Pet é uma aplicação web moderna desenvolvida para facilitar a gestão e cui
 
 1. **Clone o repositório**
 \`\`\`bash
-git clone https://github.com/seu-usuario/b-pet.git
+git clone https://github.com/brunolombardidev/petshop.git
 cd b-pet
 \`\`\`
 
@@ -64,35 +64,6 @@ yarn dev
 
 4. **Acesse a aplicação**
 Abra [http://localhost:3000](http://localhost:3000) no seu navegador
-
-## 🏗️ Estrutura do Projeto
-
-\`\`\`
-📁 b-pet/
-├── 📁 app/                     # App Router do Next.js
-│   ├── 📁 dashboard/          # Dashboards por tipo de usuário
-│   │   ├── 📁 cliente/        # Dashboard do cliente
-│   │   ├── 📁 petshop/        # Dashboard do petshop
-│   │   ├── 📁 fornecedor/     # Dashboard do fornecedor
-│   │   ├── 📁 parceiro/       # Dashboard do parceiro
-│   │   ├── 📁 empresa/        # Dashboard da empresa
-│   │   └── 📁 administrador/  # Dashboard do admin
-│   ├── 📁 meus-pets/          # Gestão de pets
-│   ├── 📁 perfil/             # Páginas de perfil
-│   ├── 📁 cartao-pet/         # Cartão de descontos
-│   ├── 📁 campanhas/          # Campanhas de doação
-│   ├── 📁 feedback/           # Sistema de feedback
-│   └── 📄 page.tsx            # Página de login
-├── 📁 components/             # Componentes reutilizáveis
-│   ├── 📁 ui/                 # Componentes shadcn/ui
-│   ├── 📄 sidebar-menu.tsx    # Menu lateral
-│   ├── 📄 floating-buttons.tsx # Botões flutuantes
-│   └── 📄 unified-header.tsx  # Cabeçalho unificado
-├── 📁 hooks/                  # Custom hooks
-├── 📁 lib/                    # Utilitários
-├── 📁 public/                 # Assets estáticos
-└── 📁 styles/                 # Estilos globais
-\`\`\`
 
 ## ✨ Funcionalidades Principais
 
