@@ -188,7 +188,7 @@ export default function AssinaturaPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-50/50 via-blue-50/30 to-pink-50/50">
-      <UnifiedHeader user={user} />
+      <UnifiedHeader user={user} onNotificationsClick={() => router.push("/notificacoes")} onMenuClick={() => {}} />
 
       <main className="px-6 py-8">
         <div className="max-w-7xl mx-auto">
