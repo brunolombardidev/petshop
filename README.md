@@ -14,29 +14,80 @@ O **B-Pet** é uma aplicação web desenvolvida para revolucionar a forma como p
 - **🏢 Empresa**: Organizações que oferecem benefícios pet aos colaboradores
 - **⚙️ Administrador**: Gestores da plataforma
 
-## 🚀 Tecnologias Utilizadas
+## 🚀 Tecnologias e Dependências
 
-### Core
-- **Node.js 20.0.0** - Runtime JavaScript moderno
-- **Next.js 14.2+** - Framework React com App Router
-- **React 18.3+** - Biblioteca para interfaces de usuário
-- **TypeScript 5.4+** - Linguagem com tipagem estática
+### Core Framework
+- **Next.js**: `14.2.15` - Framework React com App Router
+- **React**: `^18.3.1` - Biblioteca para interfaces de usuário
+- **React DOM**: `^18.3.1` - Renderização React para web
+- **TypeScript**: `^5.6.3` - Linguagem com tipagem estática
 
-### Estilização & UI
-- **Tailwind CSS 3.4+** - Framework CSS utilitário
-- **shadcn/ui** - Biblioteca de componentes modernos
-- **Radix UI 2.0+** - Primitivos de UI acessíveis
-- **Lucide React** - Ícones SVG otimizados
+### Estilização e UI
+- **Tailwind CSS**: `^3.4.1` - Framework CSS utilitário
+- **PostCSS**: `^8.4.49` - Processador CSS
+- **Autoprefixer**: `^10.4.20` - Prefixos CSS automáticos
+- **clsx**: `^2.1.1` - Utilitário para classes condicionais
+- **tailwind-merge**: `^2.5.4` - Merge de classes Tailwind
+- **tailwindcss-animate**: `^1.0.7` - Animações Tailwind
+
+### Componentes UI (Radix UI)
+- **@radix-ui/react-accordion**: `^1.2.1`
+- **@radix-ui/react-alert-dialog**: `^1.1.2`
+- **@radix-ui/react-aspect-ratio**: `^1.1.0`
+- **@radix-ui/react-avatar**: `^1.1.1`
+- **@radix-ui/react-checkbox**: `^1.1.2`
+- **@radix-ui/react-collapsible**: `^1.1.1`
+- **@radix-ui/react-context-menu**: `^2.2.2`
+- **@radix-ui/react-dialog**: `^1.1.2`
+- **@radix-ui/react-dropdown-menu**: `^2.1.2`
+- **@radix-ui/react-hover-card**: `^1.1.2`
+- **@radix-ui/react-label**: `^2.1.0`
+- **@radix-ui/react-menubar**: `^1.1.2`
+- **@radix-ui/react-navigation-menu**: `^1.2.1`
+- **@radix-ui/react-popover**: `^1.1.2`
+- **@radix-ui/react-progress**: `^1.1.0`
+- **@radix-ui/react-radio-group**: `^1.2.1`
+- **@radix-ui/react-scroll-area**: `^1.2.0`
+- **@radix-ui/react-select**: `^2.1.2`
+- **@radix-ui/react-separator**: `^1.1.0`
+- **@radix-ui/react-slider**: `^1.2.1`
+- **@radix-ui/react-slot**: `^1.1.0`
+- **@radix-ui/react-switch**: `^1.1.1`
+- **@radix-ui/react-tabs**: `^1.1.1`
+- **@radix-ui/react-toast**: `^1.2.2`
+- **@radix-ui/react-toggle**: `^1.1.0`
+- **@radix-ui/react-toggle-group**: `^1.1.0`
+- **@radix-ui/react-tooltip**: `^1.1.3`
+
+### Ícones e Gráficos
+- **lucide-react**: `^0.454.0` - Ícones SVG otimizados
+- **recharts**: `^2.13.3` - Biblioteca de gráficos React
+
+### Utilitários e Validação
+- **class-variance-authority**: `^0.7.0` - Variantes de componentes
+- **cmdk**: `^1.0.0` - Command palette
+- **date-fns**: `^4.1.0` - Manipulação de datas
+- **embla-carousel-react**: `^8.3.0` - Carousel/slider
+- **input-otp**: `^1.4.1` - Input para códigos OTP
+- **react-day-picker**: `8.10.1` - Seletor de datas
+- **react-hook-form**: `^7.53.2` - Gerenciamento de formulários
+- **react-resizable-panels**: `^2.1.4` - Painéis redimensionáveis
+- **sonner**: `^1.7.0` - Notificações toast
+- **vaul**: `^1.0.0` - Drawer component
 
 ### Ferramentas de Desenvolvimento
-- **ESLint 8.57+** - Linter para JavaScript/TypeScript
-- **PostCSS 8.4+** - Processador CSS
-- **Autoprefixer** - Prefixos CSS automáticos
+- **ESLint**: `^8.57.1` - Linter para JavaScript/TypeScript
+- **eslint-config-next**: `14.2.15` - Configuração ESLint para Next.js
+- **@types/node**: `^20.17.6` - Tipos TypeScript para Node.js
+- **@types/react**: `^18.3.12` - Tipos TypeScript para React
+- **@types/react-dom**: `^18.3.1` - Tipos TypeScript para React DOM
+
+### Runtime
+- **Node.js**: `20.0.0+` - Runtime JavaScript
 
 ## 📦 Instalação
 
 ### Pré-requisitos
-
 - Node.js 20.0.0 ou superior
 - npm 10.0.0+ ou yarn
 - Git
@@ -56,21 +107,30 @@ npm install
 yarn install
 \`\`\`
 
-3. **Configure as variáveis de ambiente**
-\`\`\`bash
-cp .env.example .env.local
-\`\`\`
-
-4. **Execute o projeto em desenvolvimento**
+3. **Execute o projeto em desenvolvimento**
 \`\`\`bash
 npm run dev
 # ou
 yarn dev
 \`\`\`
 
-5. **Acesse a aplicação**
+4. **Acesse a aplicação**
 \`\`\`
 http://localhost:3000
+\`\`\`
+
+## 🛠️ Scripts Disponíveis
+
+\`\`\`bash
+# Desenvolvimento
+npm run dev          # Inicia o servidor de desenvolvimento
+
+# Build
+npm run build        # Gera build de produção
+npm run start        # Inicia servidor de produção
+
+# Qualidade de Código
+npm run lint         # Executa ESLint
 \`\`\`
 
 ## 🏗️ Estrutura do Projeto
@@ -79,11 +139,6 @@ http://localhost:3000
 b-pet/
 ├── 📁 app/                    # App Router do Next.js
 │   ├── 📁 dashboard/         # Dashboards por tipo de usuário
-│   │   ├── 📁 cliente/       # Dashboard do cliente
-│   │   ├── 📁 petshop/       # Dashboard do petshop
-│   │   ├── 📁 fornecedor/    # Dashboard do fornecedor
-│   │   ├── 📁 empresa/       # Dashboard da empresa
-│   │   └── 📁 administrador/ # Dashboard do admin
 │   ├── 📁 perfil/           # Páginas de perfil unificado
 │   ├── 📁 meus-pets/        # Gestão de pets do cliente
 │   ├── 📁 cartao-pet/       # Sistema de cartão de descontos
@@ -92,23 +147,14 @@ b-pet/
 │   ├── 📁 feedback/         # Sistema de feedback
 │   ├── 📁 assinatura/       # Gestão de assinaturas
 │   ├── 📁 configuracoes/    # Configurações do usuário
-│   ├── 📄 page.tsx          # Página de login
-│   ├── 📄 cadastro/         # Página de cadastro
-│   ├── 📄 recuperar/        # Recuperação de senha
-│   ├── 📄 layout.tsx        # Layout principal
-│   └── 📄 globals.css       # Estilos globais
+│   └── 📁 gestao-produtos/  # Gestão de produtos
 ├── 📁 components/            # Componentes reutilizáveis
-│   ├── 📁 ui/               # Componentes shadcn/ui
-│   ├── 📄 floating-buttons.tsx # Botões flutuantes
-│   ├── 📄 sidebar-menu.tsx     # Menu lateral
-│   └── 📄 unified-header.tsx   # Cabeçalho unificado
+│   └── 📁 ui/               # Componentes shadcn/ui
 ├── 📁 hooks/                # Custom hooks
 ├── 📁 lib/                  # Utilitários e configurações
-├── 📁 public/               # Arquivos estáticos
-├── 📄 package.json          # Dependências do projeto
-├── 📄 tailwind.config.js    # Configuração do Tailwind
-├── 📄 tsconfig.json         # Configuração do TypeScript
-└── 📄 next.config.mjs       # Configuração do Next.js
+├── 📁 services/             # Serviços de API
+├── 📁 types/                # Definições de tipos TypeScript
+└── 📁 public/               # Arquivos estáticos
 \`\`\`
 
 ## ✨ Funcionalidades Principais
@@ -140,86 +186,24 @@ b-pet/
 
 ### 📱 Interface Responsiva
 - Design adaptável para todos os dispositivos
-- Botões flutuantes para acesso rápido
 - Experiência otimizada mobile-first
-
-## 🛠️ Scripts Disponíveis
-
-\`\`\`bash
-# Desenvolvimento
-npm run dev          # Inicia o servidor de desenvolvimento
-
-# Build
-npm run build        # Gera build de produção
-npm run start        # Inicia servidor de produção
-
-# Qualidade de Código
-npm run lint         # Executa ESLint
-npm run lint:fix     # Corrige problemas do ESLint automaticamente
-
-# Tipo de Verificação
-npm run type-check   # Verifica tipos TypeScript
-\`\`\`
+- Componentes acessíveis
 
 ## 🎨 Padrões de Design
 
 ### Cores Principais
-- **Laranja**: `from-orange-500 to-amber-500` - Cor principal da marca
-- **Gradientes**: Utilizados em cards e botões para criar profundidade
+- **Laranja**: Cor principal da marca
+- **Gradientes**: Utilizados em cards e botões
 - **Neutros**: Tons de cinza para texto e backgrounds
 
 ### Componentes
-- **Cards**: Bordas arredondadas (`rounded-2xl`) com sombras suaves
-- **Botões**: Gradientes com hover effects e transições suaves
+- **Cards**: Bordas arredondadas com sombras suaves
+- **Botões**: Gradientes com hover effects
 - **Ícones**: Lucide React para consistência visual
-
-### Layout
-- **Grid System**: CSS Grid e Flexbox para layouts responsivos
-- **Spacing**: Sistema de espaçamento consistente do Tailwind
-- **Typography**: Hierarquia clara com pesos e tamanhos definidos
-
-## 🔧 Configuração de Ambiente
-
-### Variáveis de Ambiente
-\`\`\`env
-# Exemplo de .env.local
-NEXT_PUBLIC_APP_URL=http://localhost:3000
-NEXT_PUBLIC_API_URL=http://localhost:3001/api
-
-# Banco de Dados (se aplicável)
-DATABASE_URL=postgresql://...
-
-# Autenticação (se aplicável)
-NEXTAUTH_SECRET=your-secret-key
-NEXTAUTH_URL=http://localhost:3000
-\`\`\`
-
-### Configuração do Editor
-Recomendamos usar VS Code com as seguintes extensões:
-- ES7+ React/Redux/React-Native snippets
-- Tailwind CSS IntelliSense
-- TypeScript Importer
-- Prettier - Code formatter
-- ESLint
-
-## 📱 Funcionalidades por Tipo de Usuário
-
-### 🤝 Contribuição
-
-1. Faça um fork do projeto
-2. Crie uma branch para sua feature (`git checkout -b feature/AmazingFeature`)
-3. Commit suas mudanças (`git commit -m 'Add some AmazingFeature'`)
-4. Push para a branch (`git push origin feature/AmazingFeature`)
-5. Abra um Pull Request
 
 ## 📄 Licença
 
-Este projeto está sob a licença MIT. Veja o arquivo [LICENSE](LICENSE) para mais detalhes.
-
-## 📞 Contato
-
-- **Projeto**: B-Pet
-- **Repositório**: [https://github.com/seu-usuario/b-pet](https://github.com/seu-usuario/b-pet)
+Este projeto está sob a licença MIT.
 
 ---
 
