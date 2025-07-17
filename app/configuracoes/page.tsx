@@ -35,21 +35,21 @@ export default function ConfiguracoesPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-orange-50/50 via-amber-50/30 to-yellow-50/50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900">
+    <div className="min-h-screen bg-gradient-to-br from-[#D6DD83]/20 via-[#FFBDB6]/20 to-[#30B2B0]/20 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900">
       {/* Header */}
-      <header className="bg-white dark:bg-gray-800 shadow-sm border-b border-orange-100 dark:border-gray-700 sticky top-0 z-50">
+      <header className="bg-white dark:bg-gray-800 shadow-sm border-b border-blue-100 dark:border-gray-700 sticky top-0 z-50">
         <div className="flex items-center justify-between px-6 py-4">
           <div className="flex items-center gap-4">
             <Button
               variant="ghost"
               size="icon"
               onClick={() => router.back()}
-              className="hover:bg-orange-100 dark:hover:bg-gray-700 rounded-xl"
+              className="hover:bg-[#D6DD83]/20 dark:hover:bg-gray-700 rounded-xl"
             >
               <ArrowLeft className="h-5 w-5 text-gray-700 dark:text-gray-300" />
             </Button>
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-gradient-to-br from-gray-400 to-gray-500 rounded-xl flex items-center justify-center shadow-lg">
+              <div className="w-10 h-10 bg-gradient-to-br from-bpet-primary to-bpet-secondary rounded-xl flex items-center justify-center shadow-lg">
                 <Settings className="w-5 h-5 text-white" />
               </div>
               <div>
@@ -69,9 +69,9 @@ export default function ConfiguracoesPage() {
             <CardHeader>
               <CardTitle className="text-xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
                 {settings.modoEscuro ? (
-                  <Moon className="w-5 h-5 text-indigo-500" />
+                  <Moon className="w-5 h-5 text-[#145D5F]" />
                 ) : (
-                  <Sun className="w-5 h-5 text-yellow-500" />
+                  <Sun className="w-5 h-5 text-[#D6DD83]" />
                 )}
                 Aparência
               </CardTitle>
@@ -83,9 +83,9 @@ export default function ConfiguracoesPage() {
               <div className="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-700 rounded-xl">
                 <div className="flex items-center gap-3">
                   {settings.modoEscuro ? (
-                    <Moon className="w-5 h-5 text-indigo-500" />
+                    <Moon className="w-5 h-5 text-[#145D5F]" />
                   ) : (
-                    <Sun className="w-5 h-5 text-yellow-500" />
+                    <Sun className="w-5 h-5 text-[#D6DD83]" />
                   )}
                   <div>
                     <Label htmlFor="modo-escuro" className="text-base font-medium text-gray-900 dark:text-white">
@@ -104,7 +104,7 @@ export default function ConfiguracoesPage() {
               </div>
 
               {settings.modoEscuro && (
-                <div className="p-4 bg-gray-900 text-white rounded-xl">
+                <div className="p-4 bg-[#145D5F] text-white rounded-xl">
                   <p className="text-sm">
                     🌙 <strong>Modo Escuro Ativado!</strong> A interface será exibida com cores escuras para reduzir o
                     cansaço visual.
@@ -128,7 +128,7 @@ export default function ConfiguracoesPage() {
             <CardContent className="space-y-4">
               <div className="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-700 rounded-xl">
                 <div className="flex items-center gap-3">
-                  <Smartphone className="w-5 h-5 text-blue-500" />
+                  <Smartphone className="w-5 h-5 text-[#30B2B0]" />
                   <div>
                     <Label htmlFor="notif-push" className="text-base font-medium text-gray-900 dark:text-white">
                       Notificações Push
@@ -145,7 +145,7 @@ export default function ConfiguracoesPage() {
 
               <div className="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-700 rounded-xl">
                 <div className="flex items-center gap-3">
-                  <Mail className="w-5 h-5 text-green-500" />
+                  <Mail className="w-5 h-5 text-[#145D5F]" />
                   <div>
                     <Label htmlFor="notif-email" className="text-base font-medium text-gray-900 dark:text-white">
                       Notificações por E-mail
@@ -162,7 +162,7 @@ export default function ConfiguracoesPage() {
 
               <div className="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-700 rounded-xl">
                 <div className="flex items-center gap-3">
-                  <Smartphone className="w-5 h-5 text-purple-500" />
+                  <Smartphone className="w-5 h-5 text-[#FFBDB6]" />
                   <div>
                     <Label htmlFor="notif-sms" className="text-base font-medium text-gray-900 dark:text-white">
                       Notificações por SMS

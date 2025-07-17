@@ -52,6 +52,11 @@ module.exports = {
           DEFAULT: "hsl(var(--card))",
           foreground: "hsl(var(--card-foreground))",
         },
+        // B-Pet Brand Colors
+        "bpet-primary": "#145D5F",
+        "bpet-secondary": "#30B2B0",
+        "bpet-accent": "#D6DD83",
+        "bpet-soft": "#FFBDB6",
       },
       borderRadius: {
         lg: "var(--radius)",

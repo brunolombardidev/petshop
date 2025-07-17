@@ -84,21 +84,16 @@ export default function GestaoProdutosPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-orange-50/50 via-amber-50/30 to-yellow-50/50">
+    <div className="min-h-screen bg-gradient-to-br from-[#D6DD83]/20 via-[#FFBDB6]/20 to-[#30B2B0]/20">
       {/* Header */}
-      <header className="bg-white shadow-sm border-b border-orange-100 sticky top-0 z-50">
+      <header className="bg-white shadow-sm border-b border-blue-100 sticky top-0 z-50">
         <div className="flex items-center justify-between px-6 py-4">
           <div className="flex items-center gap-4">
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => router.back()}
-              className="hover:bg-orange-100 rounded-xl"
-            >
+            <Button variant="ghost" size="icon" onClick={() => router.back()} className="hover:bg-blue-100 rounded-xl">
               <ArrowLeft className="h-5 w-5 text-gray-700" />
             </Button>
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-gradient-to-br from-purple-400 to-purple-500 rounded-xl flex items-center justify-center shadow-lg">
+              <div className="w-10 h-10 bg-gradient-to-br from-bpet-primary to-bpet-secondary rounded-xl flex items-center justify-center shadow-lg">
                 <Tag className="w-5 h-5 text-white" />
               </div>
               <div>
@@ -112,8 +107,11 @@ export default function GestaoProdutosPage() {
 
       {/* Botão Novo Produto */}
       <div className="px-6 py-6">
-        <div className="max-w-6xl mx-auto">
-          <Button className="h-14 px-8 py-3 rounded-xl bg-gradient-to-r from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700 text-white rounded-2xl shadow-lg hover:shadow-xl transition-all duration-200">
+        <div className="max-w-6xl mx-auto flex justify-center">
+          <Button
+            onClick={() => router.push("/gestao-produtos/novo")}
+            className="h-14 px-8 py-3 rounded-xl bg-gradient-to-r from-bpet-primary to-bpet-secondary hover:from-bpet-secondary hover:to-bpet-primary text-white rounded-2xl shadow-lg hover:shadow-xl transition-all duration-200"
+          >
             <Plus className="w-5 h-5 mr-2" />
             Novo Produto
           </Button>
@@ -130,7 +128,7 @@ export default function GestaoProdutosPage() {
               placeholder="Buscar produtos por nome ou categoria..."
               value={filtro}
               onChange={(e) => setFiltro(e.target.value)}
-              className="pl-12 h-14 text-lg border-0 bg-white/80 backdrop-blur-sm shadow-lg rounded-2xl focus:ring-2 focus:ring-purple-400/20 focus:border-purple-400"
+              className="pl-12 h-14 text-lg border-0 bg-white/80 backdrop-blur-sm shadow-lg rounded-2xl focus:ring-[#30B2B0]/20 focus:border-[#30B2B0]"
             />
           </div>
         </div>
@@ -141,7 +139,7 @@ export default function GestaoProdutosPage() {
         <div className="max-w-6xl mx-auto">
           {/* Resumo */}
           <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-            <Card className="border-0 shadow-lg bg-gradient-to-br from-blue-500 to-blue-600 text-white rounded-2xl">
+            <Card className="border-0 shadow-lg bg-gradient-to-br from-bpet-secondary to-bpet-primary text-white rounded-2xl">
               <CardContent className="p-6">
                 <div className="flex items-center justify-between">
                   <div>
@@ -153,7 +151,7 @@ export default function GestaoProdutosPage() {
               </CardContent>
             </Card>
 
-            <Card className="border-0 shadow-lg bg-gradient-to-br from-green-500 to-green-600 text-white rounded-2xl">
+            <Card className="border-0 shadow-lg bg-gradient-to-br from-bpet-primary to-bpet-secondary text-white rounded-2xl">
               <CardContent className="p-6">
                 <div className="flex items-center justify-between">
                   <div>
@@ -165,7 +163,7 @@ export default function GestaoProdutosPage() {
               </CardContent>
             </Card>
 
-            <Card className="border-0 shadow-lg bg-gradient-to-br from-yellow-500 to-yellow-600 text-white rounded-2xl">
+            <Card className="border-0 shadow-lg bg-gradient-to-br from-[#D6DD83] to-[#FFBDB6] text-white rounded-2xl">
               <CardContent className="p-6">
                 <div className="flex items-center justify-between">
                   <div>
@@ -177,7 +175,7 @@ export default function GestaoProdutosPage() {
               </CardContent>
             </Card>
 
-            <Card className="border-0 shadow-lg bg-gradient-to-br from-red-500 to-red-600 text-white rounded-2xl">
+            <Card className="border-0 shadow-lg bg-gradient-to-br from-[#FFBDB6] to-bpet-secondary text-white rounded-2xl">
               <CardContent className="p-6">
                 <div className="flex items-center justify-between">
                   <div>
@@ -243,16 +241,24 @@ export default function GestaoProdutosPage() {
                             </div>
 
                             <div className="flex items-center gap-2">
-                              <Button size="sm" variant="outline" className="rounded-lg hover:bg-purple-50">
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                className="rounded-lg hover:bg-purple-50 bg-transparent"
+                              >
                                 <Eye className="w-4 h-4" />
                               </Button>
-                              <Button size="sm" variant="outline" className="rounded-lg hover:bg-purple-50">
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                className="rounded-lg hover:bg-purple-50 bg-transparent"
+                              >
                                 <Edit className="w-4 h-4" />
                               </Button>
                               <Button
                                 size="sm"
                                 variant="outline"
-                                className="rounded-lg text-red-600 hover:text-red-700 hover:bg-red-50"
+                                className="rounded-lg text-red-600 hover:text-red-700 hover:bg-red-50 bg-transparent"
                               >
                                 <Trash2 className="w-4 h-4" />
                               </Button>

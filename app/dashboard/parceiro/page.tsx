@@ -37,9 +37,6 @@ export default function ParceiroDashboardPage() {
               <div className="w-10 h-10 bg-gradient-to-br from-orange-400 to-amber-500 rounded-xl flex items-center justify-center shadow-lg">
                 <PawPrint className="w-5 h-5 text-white" />
               </div>
-              <span className="font-bold text-xl bg-gradient-to-r from-orange-600 to-amber-600 bg-clip-text text-transparent">
-                B-Pet
-              </span>
             </div>
           </div>
 
@@ -56,13 +53,18 @@ export default function ParceiroDashboardPage() {
                   </div>
                 </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-56 rounded-xl shadow-xl border-0 bg-white/95 backdrop-blur-sm">
+              <DropdownMenuContent
+                align="end"
+                className="w-56 rounded-xl shadow-xl border-0 bg-white/95 backdrop-blur-sm"
+              >
                 <DropdownMenuLabel className="text-gray-700">Minha Conta</DropdownMenuLabel>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem className="rounded-lg">Perfil</DropdownMenuItem>
                 <DropdownMenuItem className="rounded-lg">Configurações</DropdownMenuItem>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={handleLogout} className="rounded-lg text-red-600">Sair</DropdownMenuItem>
+                <DropdownMenuItem onClick={handleLogout} className="rounded-lg text-red-600">
+                  Sair
+                </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
           </div>
@@ -187,7 +189,7 @@ export default function ParceiroDashboardPage() {
                       </p>
                     </div>
                   </div>
-                  
+
                   <div className="flex items-center justify-between p-4 bg-gradient-to-r from-green-50 to-emerald-100 rounded-xl border-l-4 border-green-500">
                     <div className="flex items-center gap-3">
                       <div className="w-10 h-10 bg-green-500 rounded-xl flex items-center justify-center">
@@ -202,4 +204,66 @@ export default function ParceiroDashboardPage() {
                           <Star className="w-3 h-3 text-yellow-500 fill-current" />
                           <Star className="w-3 h-3 text-yellow-500 fill-current" />
                           <Star className="w-3 h-3 text-gray-300" />
-                        </div>\
+                        </div>
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <Badge className="bg-green-500 text-white mb-1">Amanhã</Badge>
+                      <p className="text-sm font-medium text-green-600 flex items-center gap-1">
+                        <Clock className="w-3 h-3" />
+                        09:00
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card className="border-0 shadow-xl bg-white/80 backdrop-blur-sm rounded-2xl">
+              <CardHeader>
+                <CardTitle className="text-xl font-bold text-gray-900 flex items-center gap-2">
+                  <Users className="w-5 h-5 text-orange-500" />
+                  Clientes Recentes
+                </CardTitle>
+                <CardDescription className="text-gray-600">Últimos clientes atendidos</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between p-4 bg-gradient-to-r from-pink-50 to-pink-100 rounded-xl border-l-4 border-pink-500">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 bg-pink-500 rounded-xl flex items-center justify-center">
+                        <User className="w-5 h-5 text-white" />
+                      </div>
+                      <div>
+                        <p className="font-semibold text-gray-900">Maria Silva</p>
+                        <p className="text-sm text-gray-600">Pet: Rex</p>
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <Badge className="bg-pink-500 text-white mb-1">Hoje</Badge>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center justify-between p-4 bg-gradient-to-r from-rose-50 to-rose-100 rounded-xl border-l-4 border-rose-500">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 bg-rose-500 rounded-xl flex items-center justify-center">
+                        <User className="w-5 h-5 text-white" />
+                      </div>
+                      <div>
+                        <p className="font-semibold text-gray-900">João Santos</p>
+                        <p className="text-sm text-gray-600">Pet: Mimi</p>
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <Badge className="bg-rose-500 text-white mb-1">Amanhã</Badge>
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        </div>
+      </main>
+    </div>
+  )
+}

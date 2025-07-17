@@ -111,7 +111,7 @@ export default function PetProfilePage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-orange-50/50 via-amber-50/30 to-yellow-50/50">
+    <div className="min-h-screen bg-gradient-to-br from-[#D6DD83]/20 via-[#FFBDB6]/20 to-[#30B2B0]/20">
       {/* Header */}
       <header className="bg-white shadow-sm border-b border-orange-100 sticky top-0 z-50">
         <div className="flex items-center justify-between px-6 py-4">
@@ -120,12 +120,12 @@ export default function PetProfilePage() {
               variant="ghost"
               size="icon"
               onClick={() => router.back()}
-              className="hover:bg-orange-100 rounded-xl"
+              className="hover:bg-[#D6DD83]/20 rounded-xl"
             >
               <ArrowLeft className="h-5 w-5 text-gray-700" />
             </Button>
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-gradient-to-br from-orange-400 to-amber-500 rounded-xl flex items-center justify-center shadow-lg">
+              <div className="w-10 h-10 bg-gradient-to-br from-bpet-secondary to-bpet-primary rounded-xl flex items-center justify-center shadow-lg">
                 <PawPrint className="w-5 h-5 text-white" />
               </div>
               <div>
@@ -134,7 +134,7 @@ export default function PetProfilePage() {
               </div>
             </div>
           </div>
-          <Button variant="outline" size="sm" className="rounded-xl">
+          <Button variant="outline" size="sm" className="rounded-xl bg-transparent">
             <Edit className="w-4 h-4 mr-2" />
             Editar
           </Button>
@@ -270,7 +270,7 @@ export default function PetProfilePage() {
           {/* Botões de Ação */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <Button
-              className="h-20 flex flex-col gap-3 bg-gradient-to-br from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 text-white rounded-2xl shadow-lg hover:shadow-xl transition-all duration-200 group"
+              className="h-20 flex flex-col gap-3 bg-gradient-to-br from-bpet-primary to-bpet-secondary hover:from-bpet-secondary hover:to-bpet-primary text-white rounded-2xl shadow-lg hover:shadow-xl transition-all duration-200 group"
               onClick={() => router.push(`/pet/${petId}/vacinas`)}
             >
               <Syringe className="h-8 w-8 group-hover:scale-110 transition-transform" />
@@ -278,7 +278,7 @@ export default function PetProfilePage() {
             </Button>
             <Button
               variant="outline"
-              className="h-20 flex flex-col gap-3 border-2 border-blue-200 text-blue-600 hover:bg-blue-50 rounded-2xl shadow-lg hover:shadow-xl transition-all duration-200 group"
+              className="h-20 flex flex-col gap-3 border-2 border-[#30B2B0] text-[#145D5F] hover:bg-[#30B2B0]/10 rounded-2xl shadow-lg hover:shadow-xl transition-all duration-200 group bg-transparent"
               onClick={() => router.push(`/pet/${petId}/historico`)}
             >
               <FileText className="h-8 w-8 group-hover:scale-110 transition-transform" />

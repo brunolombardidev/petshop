@@ -117,6 +117,62 @@ const usuariosData = {
   ],
 }
 
+// Dados mockados dos colaboradores da empresa
+const colaboradoresData = [
+  {
+    id: "1",
+    nome: "João Silva Santos",
+    tipo: "colaborador",
+    cargo: "Analista de RH",
+    departamento: "Recursos Humanos",
+    dataAdmissao: "2023-01-15",
+    telefone: "(11) 9999-1234",
+    email: "joao.silva@empresa.com",
+    pets: 2,
+    status: "ativo",
+    foto: "/placeholder.svg?height=80&width=80",
+  },
+  {
+    id: "2",
+    nome: "Maria Oliveira Costa",
+    tipo: "colaborador",
+    cargo: "Gerente de Vendas",
+    departamento: "Comercial",
+    dataAdmissao: "2022-08-20",
+    telefone: "(11) 9888-5678",
+    email: "maria.oliveira@empresa.com",
+    pets: 1,
+    status: "ativo",
+    foto: "/placeholder.svg?height=80&width=80",
+  },
+  {
+    id: "3",
+    nome: "Pedro Henrique Lima",
+    tipo: "colaborador",
+    cargo: "Desenvolvedor Senior",
+    departamento: "Tecnologia",
+    dataAdmissao: "2021-03-10",
+    telefone: "(11) 9777-9012",
+    email: "pedro.lima@empresa.com",
+    pets: 3,
+    status: "ativo",
+    foto: "/placeholder.svg?height=80&width=80",
+  },
+  {
+    id: "4",
+    nome: "Ana Paula Ferreira",
+    tipo: "colaborador",
+    cargo: "Coordenadora Financeira",
+    departamento: "Financeiro",
+    dataAdmissao: "2023-06-01",
+    telefone: "(11) 9666-3456",
+    email: "ana.ferreira@empresa.com",
+    pets: 0,
+    status: "ativo",
+    foto: "/placeholder.svg?height=80&width=80",
+  },
+]
+
 export default function BuscaPage() {
   const router = useRouter()
   const searchParams = useSearchParams()
@@ -129,7 +185,7 @@ export default function BuscaPage() {
     switch (tipoUsuario) {
       case "cliente":
       case "empresa":
-        return usuariosData.petshops
+        return colaboradoresData
       case "petshop":
         return usuariosData.fornecedores
       case "fornecedor":
@@ -152,7 +208,7 @@ export default function BuscaPage() {
       case "cliente":
         return "Buscar Petshops"
       case "empresa":
-        return "Buscar Petshops Parceiros"
+        return "Buscar Colaboradores"
       case "petshop":
         return "Buscar Fornecedores"
       case "fornecedor":
@@ -169,7 +225,7 @@ export default function BuscaPage() {
       case "cliente":
         return "Buscar petshops, clínicas, serviços..."
       case "empresa":
-        return "Buscar petshops parceiros..."
+        return "Buscar colaboradores, departamentos..."
       case "petshop":
         return "Buscar fornecedores, produtos..."
       case "fornecedor":
@@ -189,8 +245,10 @@ export default function BuscaPage() {
       const filtrados = usuarios.filter(
         (usuario) =>
           usuario.nome.toLowerCase().includes(filtro.toLowerCase()) ||
-          usuario.endereco.toLowerCase().includes(filtro.toLowerCase()) ||
-          usuario.especialidades.some((esp: string) => esp.toLowerCase().includes(filtro.toLowerCase())),
+          usuario.endereco?.toLowerCase().includes(filtro.toLowerCase()) ||
+          usuario.especialidades?.some((esp: string) => esp.toLowerCase().includes(filtro.toLowerCase())) ||
+          usuario.cargo?.toLowerCase().includes(filtro.toLowerCase()) ||
+          usuario.departamento?.toLowerCase().includes(filtro.toLowerCase()),
       )
       setUsuariosFiltrados(filtrados)
     }
@@ -237,12 +295,12 @@ export default function BuscaPage() {
               variant="ghost"
               size="icon"
               onClick={() => router.back()}
-              className="hover:bg-orange-100 rounded-xl"
+              className="hover:bg-[#D6DD83]/20 rounded-xl"
             >
               <ArrowLeft className="h-5 w-5 text-gray-700" />
             </Button>
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-gradient-to-br from-orange-400 to-amber-500 rounded-xl flex items-center justify-center shadow-lg">
+              <div className="w-10 h-10 bg-gradient-to-br from-bpet-primary to-bpet-secondary rounded-xl flex items-center justify-center shadow-lg">
                 <Search className="w-5 h-5 text-white" />
               </div>
               <div>
@@ -264,7 +322,7 @@ export default function BuscaPage() {
               placeholder={getPlaceholder()}
               value={filtro}
               onChange={(e) => setFiltro(e.target.value)}
-              className="pl-12 h-14 text-lg border-0 bg-white/80 backdrop-blur-sm shadow-lg rounded-2xl focus:ring-2 focus:ring-orange-400/20 focus:border-orange-400"
+              className="pl-12 h-14 text-lg border-0 bg-white/80 backdrop-blur-sm shadow-lg rounded-2xl focus:ring-[#30B2B0]/20 focus:border-[#30B2B0]"
             />
           </div>
         </div>
@@ -282,83 +340,156 @@ export default function BuscaPage() {
           </div>
 
           <div className="space-y-4">
-            {usuariosFiltrados.map((usuario) => (
-              <Card
-                key={usuario.id}
-                className="border-0 shadow-lg bg-white/80 backdrop-blur-sm rounded-2xl hover:shadow-xl transition-all duration-200 cursor-pointer group"
-                onClick={() => {
-                  // Aqui você pode implementar a navegação para o perfil do usuário
-                  console.log("Clicou no usuário:", usuario.nome)
-                }}
-              >
-                <CardContent className="p-6">
-                  <div className="flex items-start gap-4">
-                    {/* Foto/Avatar */}
-                    <div className="w-20 h-20 bg-gradient-to-br from-orange-400 to-amber-500 rounded-2xl flex items-center justify-center shadow-lg group-hover:scale-105 transition-transform">
-                      <Building className="w-10 h-10 text-white" />
-                    </div>
+            {usuariosFiltrados.map((usuario, index) => {
+              let cardGradient = ""
+              if (index % 3 === 0) {
+                cardGradient = "bg-gradient-to-br from-bpet-secondary to-bpet-primary"
+              } else if (index % 3 === 1) {
+                cardGradient = "bg-gradient-to-br from-[#D6DD83] to-[#FFBDB6]"
+              } else {
+                cardGradient = "bg-gradient-to-br from-bpet-primary to-bpet-secondary"
+              }
 
-                    {/* Informações */}
-                    <div className="flex-1">
-                      <div className="flex items-start justify-between mb-2">
-                        <div>
-                          <h3 className="text-xl font-bold text-gray-900 group-hover:text-orange-600 transition-colors">
-                            {usuario.nome}
-                          </h3>
-                          <div className="flex items-center gap-2 mt-1">
-                            <div className="flex items-center gap-1">
-                              {[...Array(5)].map((_, i) => (
-                                <Star
-                                  key={i}
-                                  className={`w-4 h-4 ${
-                                    i < Math.floor(usuario.avaliacao) ? "text-yellow-500 fill-current" : "text-gray-300"
-                                  }`}
-                                />
-                              ))}
-                              <span className="text-sm text-gray-600 ml-1">{usuario.avaliacao}</span>
+              return (
+                <Card
+                  key={usuario.id}
+                  className={`border-0 shadow-lg bg-white/80 backdrop-blur-sm rounded-2xl hover:shadow-xl transition-all duration-200 cursor-pointer group ${cardGradient}`}
+                  onClick={() => {
+                    // Aqui você pode implementar a navegação para o perfil do usuário
+                    console.log("Clicou no usuário:", usuario.nome)
+                  }}
+                >
+                  <CardContent className="p-6">
+                    <div className="flex items-start gap-4">
+                      {/* Foto/Avatar */}
+                      <div className="w-20 h-20 bg-gradient-to-br from-orange-400 to-amber-500 rounded-2xl flex items-center justify-center shadow-lg group-hover:scale-105 transition-transform">
+                        <Building className="w-10 h-10 text-white" />
+                      </div>
+
+                      {usuario.tipo === "colaborador" ? (
+                        // Layout específico para colaboradores
+                        <div className="flex-1">
+                          <div className="flex items-start justify-between mb-2">
+                            <div>
+                              <h3 className="text-xl font-bold text-gray-900 group-hover:text-blue-600 transition-colors">
+                                {usuario.nome}
+                              </h3>
+                              <div className="flex items-center gap-2 mt-1">
+                                <Badge className="bg-blue-100 text-blue-800 border-0 capitalize">{usuario.cargo}</Badge>
+                                <Badge className="bg-gray-100 text-gray-800 border-0">{usuario.departamento}</Badge>
+                              </div>
+                            </div>
+                            <Badge
+                              className={`border-0 capitalize ${usuario.status === "ativo" ? "bg-green-100 text-green-800" : "bg-red-100 text-red-800"}`}
+                            >
+                              {usuario.status}
+                            </Badge>
+                          </div>
+
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                            <div className="flex items-center gap-2 text-gray-600">
+                              <MapPin className="w-4 h-4" />
+                              <div>
+                                <p className="text-sm">
+                                  Admissão: {new Date(usuario.dataAdmissao).toLocaleDateString("pt-BR")}
+                                </p>
+                                <p className="text-xs text-gray-500">{usuario.departamento}</p>
+                              </div>
+                            </div>
+                            <div className="space-y-1">
+                              <div className="flex items-center gap-2 text-gray-600">
+                                <Phone className="w-4 h-4" />
+                                <span className="text-sm">{usuario.telefone}</span>
+                              </div>
+                              <div className="flex items-center gap-2 text-gray-600">
+                                <Mail className="w-4 h-4" />
+                                <span className="text-sm">{usuario.email}</span>
+                              </div>
+                            </div>
+                          </div>
+
+                          {/* Informações dos pets */}
+                          <div>
+                            <p className="text-sm font-medium text-gray-700 mb-2">Pets cadastrados:</p>
+                            <div className="flex items-center gap-2">
+                              <Badge className="bg-blue-100 text-blue-800 border-0 flex items-center gap-1">
+                                <PawPrint className="w-3 h-3" />
+                                {usuario.pets} pet{usuario.pets !== 1 ? "s" : ""}
+                              </Badge>
                             </div>
                           </div>
                         </div>
-                        <Badge className={`border-0 capitalize ${getTipoColor(usuario.tipo)}`}>{usuario.tipo}</Badge>
-                      </div>
-
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-                        <div className="flex items-center gap-2 text-gray-600">
-                          <MapPin className="w-4 h-4" />
-                          <div>
-                            <p className="text-sm">{usuario.endereco}</p>
-                            <p className="text-xs text-gray-500">{usuario.cidade}</p>
-                          </div>
-                        </div>
-                        <div className="space-y-1">
-                          <div className="flex items-center gap-2 text-gray-600">
-                            <Phone className="w-4 h-4" />
-                            <span className="text-sm">{usuario.telefone}</span>
-                          </div>
-                          <div className="flex items-center gap-2 text-gray-600">
-                            <Mail className="w-4 h-4" />
-                            <span className="text-sm">{usuario.email}</span>
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* Especialidades */}
-                      <div>
-                        <p className="text-sm font-medium text-gray-700 mb-2">Especialidades:</p>
-                        <div className="flex flex-wrap gap-2">
-                          {usuario.especialidades.map((especialidade: string, index: number) => (
-                            <Badge key={index} className="bg-blue-100 text-blue-800 border-0 flex items-center gap-1">
-                              {getIconeEspecialidade(especialidade)}
-                              {especialidade}
+                      ) : (
+                        // Layout original para outros tipos de usuário
+                        <div className="flex-1">
+                          <div className="flex items-start justify-between mb-2">
+                            <div>
+                              <h3 className="text-xl font-bold text-gray-900 group-hover:text-orange-600 transition-colors">
+                                {usuario.nome}
+                              </h3>
+                              <div className="flex items-center gap-2 mt-1">
+                                <div className="flex items-center gap-1">
+                                  {[...Array(5)].map((_, i) => (
+                                    <Star
+                                      key={i}
+                                      className={`w-4 h-4 ${
+                                        i < Math.floor(usuario.avaliacao)
+                                          ? "text-yellow-500 fill-current"
+                                          : "text-gray-300"
+                                      }`}
+                                    />
+                                  ))}
+                                  <span className="text-sm text-gray-600 ml-1">{usuario.avaliacao}</span>
+                                </div>
+                              </div>
+                            </div>
+                            <Badge className={`border-0 capitalize ${getTipoColor(usuario.tipo)}`}>
+                              {usuario.tipo}
                             </Badge>
-                          ))}
+                          </div>
+
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                            <div className="flex items-center gap-2 text-gray-600">
+                              <MapPin className="w-4 h-4" />
+                              <div>
+                                <p className="text-sm">{usuario.endereco}</p>
+                                <p className="text-xs text-gray-500">{usuario.cidade}</p>
+                              </div>
+                            </div>
+                            <div className="space-y-1">
+                              <div className="flex items-center gap-2 text-gray-600">
+                                <Phone className="w-4 h-4" />
+                                <span className="text-sm">{usuario.telefone}</span>
+                              </div>
+                              <div className="flex items-center gap-2 text-gray-600">
+                                <Mail className="w-4 h-4" />
+                                <span className="text-sm">{usuario.email}</span>
+                              </div>
+                            </div>
+                          </div>
+
+                          {/* Especialidades */}
+                          <div>
+                            <p className="text-sm font-medium text-gray-700 mb-2">Especialidades:</p>
+                            <div className="flex flex-wrap gap-2">
+                              {usuario.especialidades.map((especialidade: string, index: number) => (
+                                <Badge
+                                  key={index}
+                                  className="bg-blue-100 text-blue-800 border-0 flex items-center gap-1"
+                                >
+                                  {getIconeEspecialidade(especialidade)}
+                                  {especialidade}
+                                </Badge>
+                              ))}
+                            </div>
+                          </div>
                         </div>
-                      </div>
+                      )}
                     </div>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
+                  </CardContent>
+                </Card>
+              )
+            })}
           </div>
 
           {usuariosFiltrados.length === 0 && (

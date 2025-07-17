@@ -138,7 +138,7 @@ export default function VacinasPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-orange-50/50 via-amber-50/30 to-yellow-50/50">
+    <div className="min-h-screen bg-gradient-to-br from-[#D6DD83]/20 via-[#FFBDB6]/20 to-[#30B2B0]/20">
       {/* Header */}
       <header className="bg-white shadow-sm border-b border-orange-100 sticky top-0 z-50">
         <div className="flex items-center justify-between px-6 py-4">
@@ -152,7 +152,7 @@ export default function VacinasPage() {
               <ArrowLeft className="h-5 w-5 text-gray-700" />
             </Button>
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-gradient-to-br from-green-400 to-emerald-500 rounded-xl flex items-center justify-center shadow-lg">
+              <div className="w-10 h-10 bg-gradient-to-br from-bpet-primary to-bpet-secondary rounded-xl flex items-center justify-center shadow-lg">
                 <Syringe className="w-5 h-5 text-white" />
               </div>
               <div>
@@ -161,7 +161,7 @@ export default function VacinasPage() {
               </div>
             </div>
           </div>
-          <Button className="rounded-xl bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600">
+          <Button className="rounded-xl bg-gradient-to-r from-bpet-primary to-bpet-secondary hover:from-bpet-secondary hover:to-bpet-primary">
             <Plus className="w-4 h-4 mr-2" />
             Nova Vacina
           </Button>
@@ -173,7 +173,7 @@ export default function VacinasPage() {
         <div className="max-w-4xl mx-auto">
           {/* Resumo */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-            <Card className="border-0 shadow-lg bg-gradient-to-br from-green-500 to-emerald-600 text-white rounded-2xl">
+            <Card className="border-0 shadow-lg bg-gradient-to-br from-bpet-primary to-bpet-secondary text-white rounded-2xl">
               <CardContent className="p-6">
                 <div className="flex items-center justify-between">
                   <div>
@@ -185,7 +185,7 @@ export default function VacinasPage() {
               </CardContent>
             </Card>
 
-            <Card className="border-0 shadow-lg bg-gradient-to-br from-yellow-500 to-amber-600 text-white rounded-2xl">
+            <Card className="border-0 shadow-lg bg-gradient-to-br from-[#D6DD83] to-[#FFBDB6] text-white rounded-2xl">
               <CardContent className="p-6">
                 <div className="flex items-center justify-between">
                   <div>
@@ -197,7 +197,7 @@ export default function VacinasPage() {
               </CardContent>
             </Card>
 
-            <Card className="border-0 shadow-lg bg-gradient-to-br from-red-500 to-red-600 text-white rounded-2xl">
+            <Card className="border-0 shadow-lg bg-gradient-to-br from-[#FFBDB6] to-bpet-secondary text-white rounded-2xl">
               <CardContent className="p-6">
                 <div className="flex items-center justify-between">
                   <div>

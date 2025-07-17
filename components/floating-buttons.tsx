@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
-import { Search, CreditCard, PawPrint, Tag, Home } from "lucide-react"
+import { Search, CreditCard, PawPrint, Tag, Home, UserPlus } from "lucide-react"
 
 type UserType = "cliente" | "petshop" | "fornecedor" | "empresa" | "administrador"
 
@@ -37,6 +37,10 @@ export function FloatingButtons() {
 
   const handleGestaoProdutos = () => {
     router.push("/gestao-produtos")
+  }
+
+  const handleCadastrarColaborador = () => {
+    router.push("/colaboradores/cadastrar")
   }
 
   return (
@@ -95,6 +99,18 @@ export function FloatingButtons() {
             className="w-12 h-12 hover:bg-gray-100 rounded-full transition-all duration-200 hover:scale-110"
           >
             <Tag className="h-6 w-6 text-gray-700" />
+          </Button>
+        )}
+
+        {/* Botão Cadastrar Colaborador - Apenas para Empresa */}
+        {userType === "empresa" && (
+          <Button
+            onClick={handleCadastrarColaborador}
+            variant="ghost"
+            size="icon"
+            className="w-12 h-12 hover:bg-gray-100 rounded-full transition-all duration-200 hover:scale-110"
+          >
+            <UserPlus className="h-6 w-6 text-gray-700" />
           </Button>
         )}
       </div>

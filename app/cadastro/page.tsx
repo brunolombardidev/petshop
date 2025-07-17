@@ -1,576 +1,349 @@
 "use client"
 
+import type React from "react"
+
 import { useState } from "react"
 import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Textarea } from "@/components/ui/textarea"
-import {
-  ArrowLeft,
-  ArrowRight,
-  PawPrint,
-  Mail,
-  Lock,
-  User,
-  Building,
-  MapPin,
-  Phone,
-  Calendar,
-  Package,
-  Users,
-} from "lucide-react"
-import { Progress } from "@/components/ui/progress"
-
-type UserType = "cliente" | "petshop" | "fornecedor" | "empresa"
-
-interface Step1Data {
-  email: string
-  senha: string
-  confirmaSenha: string
-  tipo: UserType | ""
-}
-
-interface ClienteData {
-  nome: string
-  cpf: string
-  nascimento: string
-  telefoneFixo: string
-  celular: string
-  cep: string
-  logradouro: string
-  numero: string
-  complemento: string
-  bairro: string
-  cidade: string
-  estado: string
-  pais: string
-  fotoUrl: string
-}
-
-interface EmpresaData {
-  cnpj: string
-  nomeFantasia: string
-  area: string
-  descritivo: string
-  telefone: string
-  email: string
-  responsavel: string
-  redesSociais: string
-  logotipo: string
-  cep: string
-  logradouro: string
-  numero: string
-  complemento: string
-  bairro: string
-  cidade: string
-  estado: string
-  pais: string
-}
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Checkbox } from "@/components/ui/checkbox"
+import { Eye, EyeOff, ArrowLeft, Heart, Mail, Lock, User, Building, Phone } from "lucide-react"
+import Image from "next/image"
 
 export default function CadastroPage() {
   const router = useRouter()
-  const [step, setStep] = useState(1)
-  const [step1Data, setStep1Data] = useState<Step1Data>({
+  const [showPassword, setShowPassword] = useState(false)
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false)
+  const [isLoading, setIsLoading] = useState(false)
+  const [acceptTerms, setAcceptTerms] = useState(false)
+  const [formData, setFormData] = useState({
+    name: "",
     email: "",
-    senha: "",
-    confirmaSenha: "",
-    tipo: "",
-  })
-  const [clienteData, setClienteData] = useState<ClienteData>({
-    nome: "",
-    cpf: "",
-    nascimento: "",
-    telefoneFixo: "",
-    celular: "",
-    cep: "",
-    logradouro: "",
-    numero: "",
-    complemento: "",
-    bairro: "",
-    cidade: "",
-    estado: "",
-    pais: "Brasil",
-    fotoUrl: "",
-  })
-  const [empresaData, setEmpresaData] = useState<EmpresaData>({
-    cnpj: "",
-    nomeFantasia: "",
-    area: "",
-    descritivo: "",
-    telefone: "",
-    email: "",
-    responsavel: "",
-    redesSociais: "",
-    logotipo: "",
-    cep: "",
-    logradouro: "",
-    numero: "",
-    complemento: "",
-    bairro: "",
-    cidade: "",
-    estado: "",
-    pais: "Brasil",
+    phone: "",
+    password: "",
+    confirmPassword: "",
+    userType: "",
+    document: "", // CPF ou CNPJ
+    companyName: "", // Para empresas
   })
 
-  const getUserTypeIcon = (type: string) => {
-    switch (type) {
-      case "cliente":
-        return <User className="w-4 h-4" />
-      case "petshop":
-        return <Building className="w-4 h-4" />
-      case "fornecedor":
-        return <Package className="w-4 h-4" />
-      case "empresa":
-        return <Users className="w-4 h-4" />
-      default:
-        return null
+  const handleInputChange = (field: string, value: string) => {
+    setFormData((prev) => ({
+      ...prev,
+      [field]: value,
+    }))
+  }
+
+  const handleRegister = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setIsLoading(true)
+
+    // Validações
+    if (formData.password !== formData.confirmPassword) {
+      alert("As senhas não coincidem!")
+      setIsLoading(false)
+      return
     }
-  }
 
-  const getUserTypeColor = (type: string) => {
-    switch (type) {
-      case "cliente":
-        return "text-pink-600"
-      case "petshop":
-        return "text-blue-600"
-      case "fornecedor":
-        return "text-purple-600"
-      case "empresa":
-        return "text-indigo-600"
-      default:
-        return "text-gray-600"
+    if (!acceptTerms) {
+      alert("Você deve aceitar os termos de uso!")
+      setIsLoading(false)
+      return
     }
+
+    // Simular cadastro
+    await new Promise((resolve) => setTimeout(resolve, 2000))
+
+    alert("Conta criada com sucesso! Faça login para continuar.")
+    router.push("/")
+
+    setIsLoading(false)
   }
 
-  const handleStep1Next = () => {
-    if (step1Data.email && step1Data.senha && step1Data.confirmaSenha && step1Data.tipo) {
-      if (step1Data.senha === step1Data.confirmaSenha) {
-        setStep(2)
-      } else {
-        alert("As senhas não coincidem!")
-      }
-    } else {
-      alert("Preencha todos os campos!")
-    }
-  }
+  const isCompanyType = ["petshop", "fornecedor", "empresa"].includes(formData.userType)
 
-  const handleFinish = () => {
-    console.log("Dados do cadastro:", {
-      step1Data,
-      step2Data: step1Data.tipo === "cliente" ? clienteData : empresaData,
-    })
-
-    // Salva o tipo de usuário no localStorage
-    localStorage.setItem("userType", step1Data.tipo)
-
-    // Redireciona para o dashboard unificado
-    router.push("/dashboard")
-  }
-
-  const renderStep1 = () => (
-    <Card className="w-full max-w-md shadow-2xl border-0 bg-white/95 backdrop-blur-sm">
-      <CardHeader className="text-center pb-6">
-        <div className="flex justify-center mb-4">
-          <div className="w-16 h-16 bg-gradient-to-br from-orange-400 to-amber-500 rounded-2xl flex items-center justify-center shadow-lg">
-            <PawPrint className="w-8 h-8 text-white" />
-          </div>
-        </div>
-        <CardTitle className="text-3xl font-bold bg-gradient-to-r from-orange-600 to-amber-600 bg-clip-text text-transparent">
-          Criar Conta
-        </CardTitle>
-        <CardDescription className="text-gray-600 text-base mt-2">Etapa 1 de 2 - Informações básicas</CardDescription>
-        <Progress value={50} className="mt-4 h-2" />
-      </CardHeader>
-      <CardContent className="space-y-6 px-8 pb-8">
-        <div className="space-y-2">
-          <div className="relative">
-            <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
-            <Input
-              id="email"
-              type="email"
-              placeholder="Digite seu e-mail"
-              value={step1Data.email}
-              onChange={(e) => setStep1Data({ ...step1Data, email: e.target.value })}
-              className="pl-11 h-12 border-gray-200 focus:border-orange-400 focus:ring-orange-400/20 rounded-xl"
-            />
-          </div>
-        </div>
-
-        <div className="space-y-2">
-          <div className="relative">
-            <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
-            <Input
-              id="senha"
-              type="password"
-              placeholder="Digite sua senha"
-              value={step1Data.senha}
-              onChange={(e) => setStep1Data({ ...step1Data, senha: e.target.value })}
-              className="pl-11 h-12 border-gray-200 focus:border-orange-400 focus:ring-orange-400/20 rounded-xl"
-            />
-          </div>
-        </div>
-
-        <div className="space-y-2">
-          <div className="relative">
-            <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
-            <Input
-              id="confirmaSenha"
-              type="password"
-              placeholder="Confirme sua senha"
-              value={step1Data.confirmaSenha}
-              onChange={(e) => setStep1Data({ ...step1Data, confirmaSenha: e.target.value })}
-              className="pl-11 h-12 border-gray-200 focus:border-orange-400 focus:ring-orange-400/20 rounded-xl"
-            />
-          </div>
-        </div>
-
-        <div className="space-y-2">
-          <Select
-            value={step1Data.tipo}
-            onValueChange={(value: UserType) => setStep1Data({ ...step1Data, tipo: value })}
-          >
-            <SelectTrigger className="h-12 border-gray-200 focus:border-orange-400 focus:ring-orange-400/20 rounded-xl">
-              <div className="flex items-center gap-2">
-                {step1Data.tipo && getUserTypeIcon(step1Data.tipo)}
-                <SelectValue placeholder="Selecione o tipo de usuário" />
-              </div>
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="cliente">
-                <div className="flex items-center gap-2">
-                  <User className="w-4 h-4 text-pink-600" />
-                  <span>Cliente</span>
-                </div>
-              </SelectItem>
-              <SelectItem value="petshop">
-                <div className="flex items-center gap-2">
-                  <Building className="w-4 h-4 text-blue-600" />
-                  <span>Petshop</span>
-                </div>
-              </SelectItem>
-              <SelectItem value="fornecedor">
-                <div className="flex items-center gap-2">
-                  <Package className="w-4 h-4 text-purple-600" />
-                  <span>Fornecedor</span>
-                </div>
-              </SelectItem>
-              <SelectItem value="empresa">
-                <div className="flex items-center gap-2">
-                  <Users className="w-4 h-4 text-indigo-600" />
-                  <span>Empresa</span>
-                </div>
-              </SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-
-        {/* Informação sobre tipos de usuário */}
-        {step1Data.tipo && (
-          <div className="p-4 bg-gray-50 rounded-xl">
-            <div className={`flex items-center gap-2 ${getUserTypeColor(step1Data.tipo)} mb-2`}>
-              {getUserTypeIcon(step1Data.tipo)}
-              <span className="font-semibold">{step1Data.tipo.charAt(0).toUpperCase() + step1Data.tipo.slice(1)}</span>
-            </div>
-            <p className="text-sm text-gray-600">
-              {step1Data.tipo === "cliente" &&
-                "Acesse serviços para seus pets, encontre petshops e gerencie seus cuidados."}
-              {step1Data.tipo === "petshop" && "Gerencie seu negócio, clientes, agendamentos e produtos."}
-              {step1Data.tipo === "fornecedor" && "Administre vendas, produtos e relacionamento com petshops."}
-              {step1Data.tipo === "empresa" && "Gerencie benefícios pet para seus colaboradores."}
-            </p>
-          </div>
-        )}
-
-        <div className="flex gap-4 pt-6">
-          <Button
-            onClick={() => router.push("/")}
-            variant="outline"
-            className="flex-1 h-12 border-2 border-gray-200 text-gray-600 hover:bg-gray-50 rounded-xl"
-          >
-            <ArrowLeft className="w-4 h-4 mr-2" />
-            Voltar
-          </Button>
-          <Button
-            onClick={handleStep1Next}
-            className="flex-1 h-12 bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white rounded-xl shadow-lg hover:shadow-xl transition-all duration-200"
-          >
-            Próximo
-            <ArrowRight className="w-4 h-4 ml-2" />
-          </Button>
-        </div>
-      </CardContent>
-    </Card>
-  )
-
-  const renderClienteStep = () => (
-    <Card className="w-full max-w-4xl shadow-2xl border-0 bg-white/95 backdrop-blur-sm">
-      <CardHeader className="text-center pb-6">
-        <div className="flex justify-center mb-4">
-          <div className="w-16 h-16 bg-gradient-to-br from-orange-400 to-amber-500 rounded-2xl flex items-center justify-center shadow-lg">
-            <User className="w-8 h-8 text-white" />
-          </div>
-        </div>
-        <CardTitle className="text-3xl font-bold bg-gradient-to-r from-orange-600 to-amber-600 bg-clip-text text-transparent">
-          Informações Pessoais
-        </CardTitle>
-        <CardDescription className="text-gray-600 text-base mt-2">Etapa 2 de 2 - Complete seu perfil</CardDescription>
-        <Progress value={100} className="mt-4 h-2" />
-      </CardHeader>
-      <CardContent className="space-y-6 px-8 pb-8">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div className="space-y-2">
-            <Label htmlFor="nome" className="text-gray-700 font-medium">
-              Nome Completo
-            </Label>
-            <div className="relative">
-              <User className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
-              <Input
-                id="nome"
-                placeholder="Seu nome completo"
-                value={clienteData.nome}
-                onChange={(e) => setClienteData({ ...clienteData, nome: e.target.value })}
-                className="pl-11 h-12 border-gray-200 focus:border-orange-400 focus:ring-orange-400/20 rounded-xl"
-              />
-            </div>
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="cpf" className="text-gray-700 font-medium">
-              CPF
-            </Label>
-            <Input
-              id="cpf"
-              placeholder="000.000.000-00"
-              value={clienteData.cpf}
-              onChange={(e) => setClienteData({ ...clienteData, cpf: e.target.value })}
-              className="h-12 border-gray-200 focus:border-orange-400 focus:ring-orange-400/20 rounded-xl"
-            />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="nascimento" className="text-gray-700 font-medium">
-              Data de Nascimento
-            </Label>
-            <div className="relative">
-              <Calendar className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
-              <Input
-                id="nascimento"
-                type="date"
-                value={clienteData.nascimento}
-                onChange={(e) => setClienteData({ ...clienteData, nascimento: e.target.value })}
-                className="pl-11 h-12 border-gray-200 focus:border-orange-400 focus:ring-orange-400/20 rounded-xl"
-              />
-            </div>
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="celular" className="text-gray-700 font-medium">
-              Celular
-            </Label>
-            <div className="relative">
-              <Phone className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
-              <Input
-                id="celular"
-                placeholder="(11) 99999-9999"
-                value={clienteData.celular}
-                onChange={(e) => setClienteData({ ...clienteData, celular: e.target.value })}
-                className="pl-11 h-12 border-gray-200 focus:border-orange-400 focus:ring-orange-400/20 rounded-xl"
-              />
-            </div>
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="cep" className="text-gray-700 font-medium">
-              CEP
-            </Label>
-            <div className="relative">
-              <MapPin className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
-              <Input
-                id="cep"
-                placeholder="00000-000"
-                value={clienteData.cep}
-                onChange={(e) => setClienteData({ ...clienteData, cep: e.target.value })}
-                className="pl-11 h-12 border-gray-200 focus:border-orange-400 focus:ring-orange-400/20 rounded-xl"
-              />
-            </div>
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="cidade" className="text-gray-700 font-medium">
-              Cidade
-            </Label>
-            <Input
-              id="cidade"
-              placeholder="Nome da cidade"
-              value={clienteData.cidade}
-              onChange={(e) => setClienteData({ ...clienteData, cidade: e.target.value })}
-              className="h-12 border-gray-200 focus:border-orange-400 focus:ring-orange-400/20 rounded-xl"
-            />
-          </div>
-        </div>
-        <div className="flex gap-4 pt-6">
-          <Button
-            onClick={() => setStep(1)}
-            variant="outline"
-            className="flex-1 h-12 border-2 border-gray-200 text-gray-600 hover:bg-gray-50 rounded-xl"
-          >
-            <ArrowLeft className="w-4 h-4 mr-2" />
-            Voltar
-          </Button>
-          <Button
-            onClick={handleFinish}
-            className="flex-1 h-12 bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 text-white rounded-xl shadow-lg hover:shadow-xl transition-all duration-200"
-          >
-            Finalizar Cadastro
-          </Button>
-        </div>
-      </CardContent>
-    </Card>
-  )
-
-  const renderEmpresaStep = () => (
-    <Card className="w-full max-w-4xl shadow-2xl border-0 bg-white/95 backdrop-blur-sm">
-      <CardHeader className="text-center pb-6">
-        <div className="flex justify-center mb-4">
-          <div className="w-16 h-16 bg-gradient-to-br from-orange-400 to-amber-500 rounded-2xl flex items-center justify-center shadow-lg">
-            <Building className="w-8 h-8 text-white" />
-          </div>
-        </div>
-        <CardTitle className="text-3xl font-bold bg-gradient-to-r from-orange-600 to-amber-600 bg-clip-text text-transparent">
-          Informações da {step1Data.tipo}
-        </CardTitle>
-        <CardDescription className="text-gray-600 text-base mt-2">
-          Etapa 2 de 2 - Complete o perfil da empresa
-        </CardDescription>
-        <Progress value={100} className="mt-4 h-2" />
-      </CardHeader>
-      <CardContent className="space-y-6 px-8 pb-8">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div className="space-y-2">
-            <Label htmlFor="cnpj" className="text-gray-700 font-medium">
-              CNPJ
-            </Label>
-            <Input
-              id="cnpj"
-              placeholder="00.000.000/0000-00"
-              value={empresaData.cnpj}
-              onChange={(e) => setEmpresaData({ ...empresaData, cnpj: e.target.value })}
-              className="h-12 border-gray-200 focus:border-orange-400 focus:ring-orange-400/20 rounded-xl"
-            />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="nomeFantasia" className="text-gray-700 font-medium">
-              Nome Fantasia
-            </Label>
-            <div className="relative">
-              <Building className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
-              <Input
-                id="nomeFantasia"
-                placeholder="Nome da empresa"
-                value={empresaData.nomeFantasia}
-                onChange={(e) => setEmpresaData({ ...empresaData, nomeFantasia: e.target.value })}
-                className="pl-11 h-12 border-gray-200 focus:border-orange-400 focus:ring-orange-400/20 rounded-xl"
-              />
-            </div>
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="telefone" className="text-gray-700 font-medium">
-              Telefone
-            </Label>
-            <div className="relative">
-              <Phone className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
-              <Input
-                id="telefone"
-                placeholder="(11) 3333-3333"
-                value={empresaData.telefone}
-                onChange={(e) => setEmpresaData({ ...empresaData, telefone: e.target.value })}
-                className="pl-11 h-12 border-gray-200 focus:border-orange-400 focus:ring-orange-400/20 rounded-xl"
-              />
-            </div>
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="responsavel" className="text-gray-700 font-medium">
-              Responsável
-            </Label>
-            <div className="relative">
-              <User className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
-              <Input
-                id="responsavel"
-                placeholder="Nome do responsável"
-                value={empresaData.responsavel}
-                onChange={(e) => setEmpresaData({ ...empresaData, responsavel: e.target.value })}
-                className="pl-11 h-12 border-gray-200 focus:border-orange-400 focus:ring-orange-400/20 rounded-xl"
-              />
-            </div>
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="cepEmpresa" className="text-gray-700 font-medium">
-              CEP
-            </Label>
-            <div className="relative">
-              <MapPin className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
-              <Input
-                id="cepEmpresa"
-                placeholder="00000-000"
-                value={empresaData.cep}
-                onChange={(e) => setEmpresaData({ ...empresaData, cep: e.target.value })}
-                className="pl-11 h-12 border-gray-200 focus:border-orange-400 focus:ring-orange-400/20 rounded-xl"
-              />
-            </div>
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="cidadeEmpresa" className="text-gray-700 font-medium">
-              Cidade
-            </Label>
-            <Input
-              id="cidadeEmpresa"
-              placeholder="Nome da cidade"
-              value={empresaData.cidade}
-              onChange={(e) => setEmpresaData({ ...empresaData, cidade: e.target.value })}
-              className="h-12 border-gray-200 focus:border-orange-400 focus:ring-orange-400/20 rounded-xl"
-            />
-          </div>
-        </div>
-        <div className="space-y-2">
-          <Label htmlFor="descritivo" className="text-gray-700 font-medium">
-            Descritivo da Empresa
-          </Label>
-          <Textarea
-            id="descritivo"
-            placeholder="Descreva sua empresa, serviços oferecidos..."
-            value={empresaData.descritivo}
-            onChange={(e) => setEmpresaData({ ...empresaData, descritivo: e.target.value })}
-            className="min-h-[100px] border-gray-200 focus:border-orange-400 focus:ring-orange-400/20 rounded-xl resize-none"
-          />
-        </div>
-        <div className="flex gap-4 pt-6">
-          <Button
-            onClick={() => setStep(1)}
-            variant="outline"
-            className="flex-1 h-12 border-2 border-gray-200 text-gray-600 hover:bg-gray-50 rounded-xl"
-          >
-            <ArrowLeft className="w-4 h-4 mr-2" />
-            Voltar
-          </Button>
-          <Button
-            onClick={handleFinish}
-            className="flex-1 h-12 bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 text-white rounded-xl shadow-lg hover:shadow-xl transition-all duration-200"
-          >
-            Finalizar Cadastro
-          </Button>
-        </div>
-      </CardContent>
-    </Card>
-  )
+  const isFormValid =
+    formData.name &&
+    formData.email &&
+    formData.password &&
+    formData.confirmPassword &&
+    formData.userType &&
+    formData.document &&
+    (isCompanyType ? formData.companyName : true) &&
+    acceptTerms
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-orange-50 via-amber-50 to-yellow-50 p-4 relative overflow-hidden">
-      {/* Background decorative elements */}
-      <div className="absolute top-10 left-10 w-20 h-20 bg-orange-200/30 rounded-full blur-xl"></div>
-      <div className="absolute bottom-10 right-10 w-32 h-32 bg-amber-200/30 rounded-full blur-xl"></div>
-      <div className="absolute top-1/2 left-1/4 w-16 h-16 bg-yellow-200/30 rounded-full blur-xl"></div>
+    <div className="min-h-screen bg-gradient-to-br from-[#D6DD83]/30 via-[#FFBDB6]/30 to-[#30B2B0]/30 flex items-center justify-center p-4">
+      <div className="w-full max-w-md">
+        {/* Header */}
+        <div className="flex items-center gap-4 mb-6">
+          <Button variant="ghost" size="icon" onClick={() => router.back()} className="hover:bg-white/50 rounded-xl">
+            <ArrowLeft className="h-5 w-5 text-gray-700" />
+          </Button>
+          <div className="flex items-center gap-3">
+            <div className="w-12 h-12 bg-gradient-to-br from-bpet-primary to-bpet-secondary rounded-xl flex items-center justify-center shadow-lg">
+              <Image src="/bpet-logo.png" alt="BPet Logo" width={24} height={24} className="rounded-lg" />
+            </div>
+            <div>
+              <h1 className="text-2xl font-bold text-gray-900">Criar Conta</h1>
+              <p className="text-sm text-gray-600">Junte-se à nossa comunidade</p>
+            </div>
+          </div>
+        </div>
 
-      {step === 1 && renderStep1()}
-      {step === 2 && step1Data.tipo === "cliente" && renderClienteStep()}
-      {step === 2 && step1Data.tipo !== "cliente" && step1Data.tipo !== "" && renderEmpresaStep()}
+        {/* Card de Cadastro */}
+        <Card className="border-0 shadow-2xl bg-white/90 backdrop-blur-sm rounded-2xl">
+          <CardHeader className="text-center pb-2">
+            <CardTitle className="text-xl font-bold text-gray-900">Cadastro</CardTitle>
+            <CardDescription className="text-gray-600">Preencha os dados para criar sua conta</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <form onSubmit={handleRegister} className="space-y-4">
+              {/* Tipo de Usuário */}
+              <div className="space-y-2">
+                <Label htmlFor="userType" className="text-sm font-medium text-gray-700">
+                  Eu sou: *
+                </Label>
+                <Select
+                  value={formData.userType}
+                  onValueChange={(value) => handleInputChange("userType", value)}
+                  required
+                >
+                  <SelectTrigger className="h-11 border-gray-200 focus:border-[#30B2B0] focus:ring-[#30B2B0]/20 rounded-xl">
+                    <SelectValue placeholder="Selecione o tipo de usuário" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="cliente">
+                      <div className="flex items-center gap-2">
+                        <User className="w-4 h-4" />
+                        Cliente (Dono de Pet)
+                      </div>
+                    </SelectItem>
+                    <SelectItem value="petshop">
+                      <div className="flex items-center gap-2">
+                        <Heart className="w-4 h-4" />
+                        Petshop/Clínica
+                      </div>
+                    </SelectItem>
+                    <SelectItem value="fornecedor">
+                      <div className="flex items-center gap-2">
+                        <Building className="w-4 h-4" />
+                        Fornecedor
+                      </div>
+                    </SelectItem>
+                    <SelectItem value="empresa">
+                      <div className="flex items-center gap-2">
+                        <Building className="w-4 h-4" />
+                        Empresa
+                      </div>
+                    </SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* Nome */}
+              <div className="space-y-2">
+                <Label htmlFor="name" className="text-sm font-medium text-gray-700">
+                  {isCompanyType ? "Nome do Responsável *" : "Nome Completo *"}
+                </Label>
+                <div className="relative">
+                  <User className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+                  <Input
+                    id="name"
+                    type="text"
+                    value={formData.name}
+                    onChange={(e) => handleInputChange("name", e.target.value)}
+                    placeholder="Seu nome completo"
+                    className="pl-10 h-11 border-gray-200 focus:border-[#30B2B0] focus:ring-[#30B2B0]/20 rounded-xl"
+                    required
+                  />
+                </div>
+              </div>
+
+              {/* Nome da Empresa (apenas para empresas) */}
+              {isCompanyType && (
+                <div className="space-y-2">
+                  <Label htmlFor="companyName" className="text-sm font-medium text-gray-700">
+                    Nome da Empresa *
+                  </Label>
+                  <div className="relative">
+                    <Building className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+                    <Input
+                      id="companyName"
+                      type="text"
+                      value={formData.companyName}
+                      onChange={(e) => handleInputChange("companyName", e.target.value)}
+                      placeholder="Nome da empresa"
+                      className="pl-10 h-11 border-gray-200 focus:border-[#30B2B0] focus:ring-[#30B2B0]/20 rounded-xl"
+                      required
+                    />
+                  </div>
+                </div>
+              )}
+
+              {/* CPF/CNPJ */}
+              <div className="space-y-2">
+                <Label htmlFor="document" className="text-sm font-medium text-gray-700">
+                  {isCompanyType ? "CNPJ *" : "CPF *"}
+                </Label>
+                <Input
+                  id="document"
+                  type="text"
+                  value={formData.document}
+                  onChange={(e) => handleInputChange("document", e.target.value)}
+                  placeholder={isCompanyType ? "00.000.000/0000-00" : "000.000.000-00"}
+                  className="h-11 border-gray-200 focus:border-[#30B2B0] focus:ring-[#30B2B0]/20 rounded-xl"
+                  required
+                />
+              </div>
+
+              {/* Email */}
+              <div className="space-y-2">
+                <Label htmlFor="email" className="text-sm font-medium text-gray-700">
+                  E-mail *
+                </Label>
+                <div className="relative">
+                  <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+                  <Input
+                    id="email"
+                    type="email"
+                    value={formData.email}
+                    onChange={(e) => handleInputChange("email", e.target.value)}
+                    placeholder="seu@email.com"
+                    className="pl-10 h-11 border-gray-200 focus:border-[#30B2B0] focus:ring-[#30B2B0]/20 rounded-xl"
+                    required
+                  />
+                </div>
+              </div>
+
+              {/* Telefone */}
+              <div className="space-y-2">
+                <Label htmlFor="phone" className="text-sm font-medium text-gray-700">
+                  Telefone
+                </Label>
+                <div className="relative">
+                  <Phone className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+                  <Input
+                    id="phone"
+                    type="tel"
+                    value={formData.phone}
+                    onChange={(e) => handleInputChange("phone", e.target.value)}
+                    placeholder="(11) 99999-9999"
+                    className="pl-10 h-11 border-gray-200 focus:border-[#30B2B0] focus:ring-[#30B2B0]/20 rounded-xl"
+                  />
+                </div>
+              </div>
+
+              {/* Senha */}
+              <div className="space-y-2">
+                <Label htmlFor="password" className="text-sm font-medium text-gray-700">
+                  Senha *
+                </Label>
+                <div className="relative">
+                  <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+                  <Input
+                    id="password"
+                    type={showPassword ? "text" : "password"}
+                    value={formData.password}
+                    onChange={(e) => handleInputChange("password", e.target.value)}
+                    placeholder="••••••••"
+                    className="pl-10 pr-10 h-11 border-gray-200 focus:border-[#30B2B0] focus:ring-[#30B2B0]/20 rounded-xl"
+                    required
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                  >
+                    {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  </button>
+                </div>
+              </div>
+
+              {/* Confirmar Senha */}
+              <div className="space-y-2">
+                <Label htmlFor="confirmPassword" className="text-sm font-medium text-gray-700">
+                  Confirmar Senha *
+                </Label>
+                <div className="relative">
+                  <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+                  <Input
+                    id="confirmPassword"
+                    type={showConfirmPassword ? "text" : "password"}
+                    value={formData.confirmPassword}
+                    onChange={(e) => handleInputChange("confirmPassword", e.target.value)}
+                    placeholder="••••••••"
+                    className="pl-10 pr-10 h-11 border-gray-200 focus:border-[#30B2B0] focus:ring-[#30B2B0]/20 rounded-xl"
+                    required
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                    className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                  >
+                    {showConfirmPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  </button>
+                </div>
+              </div>
+
+              {/* Termos de Uso */}
+              <div className="flex items-center space-x-2">
+                <Checkbox id="terms" checked={acceptTerms} onCheckedChange={setAcceptTerms} />
+                <Label htmlFor="terms" className="text-sm text-gray-600">
+                  Aceito os{" "}
+                  <Button
+                    type="button"
+                    variant="link"
+                    className="text-[#30B2B0] hover:text-[#145D5F] p-0 h-auto underline"
+                  >
+                    termos de uso
+                  </Button>{" "}
+                  e{" "}
+                  <Button
+                    type="button"
+                    variant="link"
+                    className="text-[#30B2B0] hover:text-[#145D5F] p-0 h-auto underline"
+                  >
+                    política de privacidade
+                  </Button>
+                </Label>
+              </div>
+
+              {/* Botão de Cadastro */}
+              <Button
+                type="submit"
+                disabled={!isFormValid || isLoading}
+                className="w-full h-11 bg-gradient-to-r from-bpet-primary to-bpet-secondary hover:from-bpet-secondary hover:to-bpet-primary text-white rounded-xl font-medium shadow-lg hover:shadow-xl transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {isLoading ? (
+                  <div className="flex items-center gap-2">
+                    <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                    Criando conta...
+                  </div>
+                ) : (
+                  "Criar Conta"
+                )}
+              </Button>
+            </form>
+
+            {/* Já tem conta */}
+            <div className="mt-6 text-center">
+              <span className="text-sm text-gray-600">Já tem uma conta? </span>
+              <Button
+                type="button"
+                variant="link"
+                onClick={() => router.push("/")}
+                className="text-[#30B2B0] hover:text-[#145D5F] p-0 h-auto font-medium"
+              >
+                Fazer login
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
     </div>
   )
 }

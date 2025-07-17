@@ -63,7 +63,7 @@ export function SidebarMenu({ isOpen, onClose, userType }: SidebarMenuProps) {
         }`}
       >
         {/* Header do Menu */}
-        <div className="flex items-center justify-between p-6 border-b border-gray-200">
+        <div className="flex items-center justify-between p-4 border-b border-gray-200">
           <h2 className="text-xl font-bold text-gray-900">Menu</h2>
           <Button variant="ghost" size="icon" onClick={onClose} className="hover:bg-gray-100 rounded-xl">
             <X className="h-6 w-6 text-gray-700" />
@@ -71,11 +71,11 @@ export function SidebarMenu({ isOpen, onClose, userType }: SidebarMenuProps) {
         </div>
 
         {/* Menu Items */}
-        <div className="p-6 space-y-2">
+        <div className="p-4 space-y-1">
           <Button
             onClick={handleProfileClick}
             variant="ghost"
-            className="w-full justify-start h-12 text-left hover:bg-orange-50 rounded-xl"
+            className="w-full justify-start h-10 text-left hover:bg-orange-50 rounded-xl"
           >
             <User className="h-5 w-5 mr-3 text-gray-600" />
             <span className="text-gray-900 font-medium">Ver Perfil</span>
@@ -87,7 +87,7 @@ export function SidebarMenu({ isOpen, onClose, userType }: SidebarMenuProps) {
               onClose()
             }}
             variant="ghost"
-            className="w-full justify-start h-12 text-left hover:bg-orange-50 rounded-xl"
+            className="w-full justify-start h-10 text-left hover:bg-orange-50 rounded-xl"
           >
             <Crown className="h-5 w-5 mr-3 text-gray-600" />
             <span className="text-gray-900 font-medium">Assinatura</span>
@@ -96,7 +96,7 @@ export function SidebarMenu({ isOpen, onClose, userType }: SidebarMenuProps) {
           <Button
             onClick={handleIndicationsClick}
             variant="ghost"
-            className="w-full justify-start h-12 text-left hover:bg-orange-50 rounded-xl"
+            className="w-full justify-start h-10 text-left hover:bg-orange-50 rounded-xl"
           >
             <UserPlus className="h-5 w-5 mr-3 text-gray-600" />
             <span className="text-gray-900 font-medium">Indicações</span>
@@ -105,7 +105,7 @@ export function SidebarMenu({ isOpen, onClose, userType }: SidebarMenuProps) {
           <Button
             onClick={handleCampaignsClick}
             variant="ghost"
-            className="w-full justify-start h-12 text-left hover:bg-orange-50 rounded-xl"
+            className="w-full justify-start h-10 text-left hover:bg-orange-50 rounded-xl"
           >
             <Heart className="h-5 w-5 mr-3 text-gray-600" />
             <span className="text-gray-900 font-medium">Campanhas</span>
@@ -114,7 +114,7 @@ export function SidebarMenu({ isOpen, onClose, userType }: SidebarMenuProps) {
           <Button
             onClick={handleFeedbackClick}
             variant="ghost"
-            className="w-full justify-start h-12 text-left hover:bg-orange-50 rounded-xl"
+            className="w-full justify-start h-10 text-left hover:bg-orange-50 rounded-xl"
           >
             <MessageSquare className="h-5 w-5 mr-3 text-gray-600" />
             <span className="text-gray-900 font-medium">Feedback</span>
@@ -123,7 +123,7 @@ export function SidebarMenu({ isOpen, onClose, userType }: SidebarMenuProps) {
           <Button
             onClick={handleReportsClick}
             variant="ghost"
-            className="w-full justify-start h-12 text-left hover:bg-orange-50 rounded-xl"
+            className="w-full justify-start h-10 text-left hover:bg-orange-50 rounded-xl"
           >
             <BarChart3 className="h-5 w-5 mr-3 text-gray-600" />
             <span className="text-gray-900 font-medium">Relatórios</span>
@@ -132,19 +132,19 @@ export function SidebarMenu({ isOpen, onClose, userType }: SidebarMenuProps) {
           <Button
             onClick={handleSettingsClick}
             variant="ghost"
-            className="w-full justify-start h-12 text-left hover:bg-orange-50 rounded-xl"
+            className="w-full justify-start h-10 text-left hover:bg-orange-50 rounded-xl"
           >
             <Settings className="h-5 w-5 mr-3 text-gray-600" />
             <span className="text-gray-900 font-medium">Configurações</span>
           </Button>
 
           {/* Separador */}
-          <div className="border-t border-gray-200 my-3"></div>
+          <div className="border-t border-gray-200 my-2"></div>
 
           <Button
             onClick={handleLogout}
             variant="ghost"
-            className="w-full justify-start h-12 text-left hover:bg-red-50 rounded-xl group"
+            className="w-full justify-start h-10 text-left hover:bg-red-50 rounded-xl group"
           >
             <LogOut className="h-5 w-5 mr-3 text-gray-600 group-hover:text-red-600" />
             <span className="text-gray-900 font-medium group-hover:text-red-600">Sair</span>
