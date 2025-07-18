@@ -1,7 +1,6 @@
 "use client"
 
 import type React from "react"
-
 import { useState } from "react"
 import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
@@ -12,10 +11,13 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { ArrowLeft, MessageSquare, Save, Star } from "lucide-react"
 import { FloatingButtons } from "@/components/floating-buttons"
+import { feedbackService, type CreateFeedbackRequest } from "@/services/feedback.service"
+import { toast } from "@/hooks/use-toast"
 
 export default function NovoFeedbackPage() {
   const router = useRouter()
-  const [formData, setFormData] = useState({
+  const [loading, setLoading] = useState(false)
+  const [formData, setFormData] = useState<CreateFeedbackRequest>({
     titulo: "",
     empresa: "",
     categoria: "",
@@ -24,12 +26,27 @@ export default function NovoFeedbackPage() {
     recomenda: "",
   })
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    // Simular criação do feedback
-    console.log("Feedback criado:", formData)
-    alert("Feedback enviado com sucesso!")
-    router.push("/feedback")
+    setLoading(true)
+
+    try {
+      await feedbackService.createFeedback(formData)
+      toast({
+        title: "Sucesso!",
+        description: "Feedback enviado com sucesso! Aguarde a análise.",
+      })
+      router.push("/feedback")
+    } catch (error) {
+      console.error("Erro ao criar feedback:", error)
+      toast({
+        title: "Erro",
+        description: "Erro ao enviar feedback. Tente novamente.",
+        variant: "destructive",
+      })
+    } finally {
+      setLoading(false)
+    }
   }
 
   const renderStarSelector = () => {
@@ -177,7 +194,7 @@ export default function NovoFeedbackPage() {
                     Você recomendaria?
                   </Label>
                   <Select
-                    value={formData.recomenda}
+                    value={formData.recomenda || ""}
                     onValueChange={(value) => setFormData({ ...formData, recomenda: value })}
                   >
                     <SelectTrigger className="h-12 border-gray-200 focus:border-[#30B2B0] focus:ring-[#30B2B0]/20 rounded-xl">
@@ -205,15 +222,17 @@ export default function NovoFeedbackPage() {
                     onClick={() => router.back()}
                     variant="outline"
                     className="flex-1 h-12 rounded-xl"
+                    disabled={loading}
                   >
                     Cancelar
                   </Button>
                   <Button
                     type="submit"
                     className="flex-1 h-12 bg-gradient-to-r from-bpet-secondary to-bpet-primary hover:from-bpet-primary hover:to-bpet-secondary text-white rounded-xl"
+                    disabled={loading}
                   >
                     <Save className="w-4 h-4 mr-2" />
-                    Enviar Feedback
+                    {loading ? "Enviando..." : "Enviar Feedback"}
                   </Button>
                 </div>
               </form>

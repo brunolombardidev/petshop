@@ -1,7 +1,6 @@
 "use client"
 
 import type React from "react"
-
 import { useState } from "react"
 import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
@@ -12,25 +11,62 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { ArrowLeft, Heart, Save, Camera } from "lucide-react"
 import { FloatingButtons } from "@/components/floating-buttons"
+import { campaignService, type CreateCampaignRequest } from "@/services/campaign.service"
+import { toast } from "@/hooks/use-toast"
 
 export default function NovaCampanhaPage() {
   const router = useRouter()
-  const [formData, setFormData] = useState({
+  const [loading, setLoading] = useState(false)
+  const [selectedImage, setSelectedImage] = useState<File | null>(null)
+  const [imagePreview, setImagePreview] = useState<string | null>(null)
+  const [formData, setFormData] = useState<Omit<CreateCampaignRequest, "imagem">>({
     titulo: "",
     descricao: "",
     categoria: "",
-    meta: "",
+    meta: 0,
     dataInicio: "",
     dataFim: "",
     observacoes: "",
   })
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (file) {
+      setSelectedImage(file)
+      const reader = new FileReader()
+      reader.onload = (e) => {
+        setImagePreview(e.target?.result as string)
+      }
+      reader.readAsDataURL(file)
+    }
+  }
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    // Simular criação da campanha
-    console.log("Campanha criada:", formData)
-    alert("Campanha criada com sucesso!")
-    router.push("/campanhas")
+    setLoading(true)
+
+    try {
+      const campaignData: CreateCampaignRequest = {
+        ...formData,
+        imagem: selectedImage || undefined,
+      }
+
+      await campaignService.createCampaign(campaignData)
+      toast({
+        title: "Sucesso!",
+        description: "Campanha criada com sucesso! Aguarde a aprovação.",
+      })
+      router.push("/campanhas")
+    } catch (error) {
+      console.error("Erro ao criar campanha:", error)
+      toast({
+        title: "Erro",
+        description: "Erro ao criar campanha. Tente novamente.",
+        variant: "destructive",
+      })
+    } finally {
+      setLoading(false)
+    }
   }
 
   return (
@@ -76,16 +112,38 @@ export default function NovaCampanhaPage() {
                 {/* Imagem da Campanha */}
                 <div className="flex justify-center">
                   <div className="relative">
-                    <div className="w-full h-48 bg-gradient-to-br from-bpet-primary to-[#FFBDB6] rounded-2xl flex items-center justify-center shadow-lg">
-                      <Heart className="w-16 h-16 text-white" />
+                    <div className="w-full h-48 bg-gradient-to-br from-bpet-primary to-[#FFBDB6] rounded-2xl flex items-center justify-center shadow-lg overflow-hidden">
+                      {imagePreview ? (
+                        <img
+                          src={imagePreview || "/placeholder.svg"}
+                          alt="Preview"
+                          className="w-full h-full object-cover"
+                        />
+                      ) : (
+                        <Heart className="w-16 h-16 text-white" />
+                      )}
                     </div>
-                    <Button
-                      type="button"
-                      size="icon"
-                      className="absolute bottom-4 right-4 w-10 h-10 rounded-full bg-white/90 hover:bg-white text-gray-700 shadow-lg"
-                    >
-                      <Camera className="w-5 h-5" />
-                    </Button>
+                    <div className="absolute bottom-4 right-4">
+                      <input
+                        type="file"
+                        accept="image/*"
+                        onChange={handleImageChange}
+                        className="hidden"
+                        id="image-upload"
+                      />
+                      <label htmlFor="image-upload">
+                        <Button
+                          type="button"
+                          size="icon"
+                          className="w-10 h-10 rounded-full bg-white/90 hover:bg-white text-gray-700 shadow-lg cursor-pointer"
+                          asChild
+                        >
+                          <div>
+                            <Camera className="w-5 h-5" />
+                          </div>
+                        </Button>
+                      </label>
+                    </div>
                   </div>
                 </div>
 
@@ -136,8 +194,8 @@ export default function NovaCampanhaPage() {
                       id="meta"
                       type="number"
                       required
-                      value={formData.meta}
-                      onChange={(e) => setFormData({ ...formData, meta: e.target.value })}
+                      value={formData.meta || ""}
+                      onChange={(e) => setFormData({ ...formData, meta: Number(e.target.value) })}
                       className="h-12 border-gray-200 focus:border-[#30B2B0] focus:ring-[#30B2B0]/20 rounded-xl"
                       placeholder="5000"
                     />
@@ -192,7 +250,7 @@ export default function NovaCampanhaPage() {
                   </Label>
                   <Textarea
                     id="observacoes"
-                    value={formData.observacoes}
+                    value={formData.observacoes || ""}
                     onChange={(e) => setFormData({ ...formData, observacoes: e.target.value })}
                     className="min-h-[100px] border-gray-200 focus:border-[#30B2B0] focus:ring-[#30B2B0]/20 rounded-xl resize-none"
                     placeholder="Informações complementares, formas de contato, etc..."
@@ -213,15 +271,17 @@ export default function NovaCampanhaPage() {
                     onClick={() => router.back()}
                     variant="outline"
                     className="flex-1 h-12 rounded-xl"
+                    disabled={loading}
                   >
                     Cancelar
                   </Button>
                   <Button
                     type="submit"
                     className="flex-1 h-12 bg-gradient-to-r from-bpet-primary to-[#FFBDB6] hover:from-[#FFBDB6] hover:to-bpet-primary text-white rounded-xl"
+                    disabled={loading}
                   >
                     <Save className="w-4 h-4 mr-2" />
-                    Criar Campanha
+                    {loading ? "Criando..." : "Criar Campanha"}
                   </Button>
                 </div>
               </form>

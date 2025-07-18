@@ -1,60 +1,101 @@
 import { apiClient } from "@/lib/api-client"
-import type { Pet, ApiResponse, PaginatedResponse, Vaccination } from "@/types/api"
+import type { ApiResponse, PaginatedResponse } from "@/types/api"
 
-export class PetService {
-  static async getPets(params?: {
+export interface Pet {
+  id: string
+  nome: string
+  especie: "cao" | "gato" | "ave" | "peixe" | "roedor" | "reptil" | "outro"
+  raca?: string
+  idade: number
+  peso: number
+  cor: string
+  sexo: "macho" | "femea"
+  castrado: boolean
+  microchip?: string
+  observacoes?: string
+  foto?: string
+  userId: string
+  createdAt: string
+  updatedAt: string
+}
+
+export interface CreatePetRequest {
+  nome: string
+  especie: "cao" | "gato" | "ave" | "peixe" | "roedor" | "reptil" | "outro"
+  raca?: string
+  idade: number
+  peso: number
+  cor: string
+  sexo: "macho" | "femea"
+  castrado: boolean
+  microchip?: string
+  observacoes?: string
+  foto?: File
+}
+
+class PetService {
+  private readonly baseEndpoint = "/pets"
+
+  async getPets(params?: {
     page?: number
     limit?: number
-    ownerId?: string
+    search?: string
+    especie?: string
   }): Promise<PaginatedResponse<Pet>> {
-    const response = await apiClient.get<ApiResponse<PaginatedResponse<Pet>>>("/pets", params)
-    return response.data
+    return apiClient.get<PaginatedResponse<Pet>>(this.baseEndpoint, params)
   }
 
-  static async getPetById(id: string): Promise<Pet> {
-    const response = await apiClient.get<ApiResponse<Pet>>(`/pets/${id}`)
-    return response.data
+  async getPetById(id: string): Promise<ApiResponse<Pet>> {
+    return apiClient.get<ApiResponse<Pet>>(`${this.baseEndpoint}/${id}`)
   }
 
-  static async createPet(petData: Omit<Pet, "id" | "createdAt" | "updatedAt">): Promise<Pet> {
-    const response = await apiClient.post<ApiResponse<Pet>>("/pets", petData)
-    return response.data
+  async createPet(data: CreatePetRequest): Promise<ApiResponse<Pet>> {
+    if (data.foto) {
+      const formData = new FormData()
+      formData.append("nome", data.nome)
+      formData.append("especie", data.especie)
+      if (data.raca) formData.append("raca", data.raca)
+      formData.append("idade", data.idade.toString())
+      formData.append("peso", data.peso.toString())
+      formData.append("cor", data.cor)
+      formData.append("sexo", data.sexo)
+      formData.append("castrado", data.castrado.toString())
+      if (data.microchip) formData.append("microchip", data.microchip)
+      if (data.observacoes) formData.append("observacoes", data.observacoes)
+      formData.append("foto", data.foto)
+
+      const response = await fetch(`${apiClient["baseURL"]}${this.baseEndpoint}`, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem("auth_token")}`,
+        },
+        body: formData,
+      })
+
+      return response.json()
+    }
+
+    return apiClient.post<ApiResponse<Pet>>(this.baseEndpoint, data)
   }
 
-  static async updatePet(id: string, petData: Partial<Pet>): Promise<Pet> {
-    const response = await apiClient.put<ApiResponse<Pet>>(`/pets/${id}`, petData)
-    return response.data
+  async updatePet(id: string, data: Partial<CreatePetRequest>): Promise<ApiResponse<Pet>> {
+    return apiClient.patch<ApiResponse<Pet>>(`${this.baseEndpoint}/${id}`, data)
   }
 
-  static async deletePet(id: string): Promise<void> {
-    await apiClient.delete(`/pets/${id}`)
+  async deletePet(id: string): Promise<ApiResponse<void>> {
+    return apiClient.delete<ApiResponse<void>>(`${this.baseEndpoint}/${id}`)
   }
 
-  static async uploadPetAvatar(petId: string, file: File): Promise<Pet> {
-    const response = await apiClient.uploadFile<ApiResponse<Pet>>(`/pets/${petId}/avatar`, file)
-    return response.data
-  }
-
-  static async addVaccination(petId: string, vaccination: Omit<Vaccination, "id">): Promise<Vaccination> {
-    const response = await apiClient.post<ApiResponse<Vaccination>>(`/pets/${petId}/vaccinations`, vaccination)
-    return response.data
-  }
-
-  static async getVaccinations(petId: string): Promise<Vaccination[]> {
-    const response = await apiClient.get<ApiResponse<Vaccination[]>>(`/pets/${petId}/vaccinations`)
-    return response.data
-  }
-
-  static async updateVaccination(
-    petId: string,
-    vaccinationId: string,
-    data: Partial<Vaccination>,
-  ): Promise<Vaccination> {
-    const response = await apiClient.put<ApiResponse<Vaccination>>(`/pets/${petId}/vaccinations/${vaccinationId}`, data)
-    return response.data
-  }
-
-  static async deleteVaccination(petId: string, vaccinationId: string): Promise<void> {
-    await apiClient.delete(`/pets/${petId}/vaccinations/${vaccinationId}`)
+  async getPetStats(): Promise<
+    ApiResponse<{
+      totalPets: number
+      petsBySpecies: Record<string, number>
+      averageAge: number
+      castrationRate: number
+    }>
+  > {
+    return apiClient.get<ApiResponse<any>>(`${this.baseEndpoint}/stats`)
   }
 }
+
+export const petService = new PetService()

@@ -294,14 +294,6 @@ export default function BuscaPage() {
     }
   }
 
-  // Função helper para verificar se o usuário tem uma propriedade
-  const hasProperty = <T extends Usuario, K extends keyof T>(
-    usuario: T,
-    property: K,
-  ): usuario is T & Record<K, NonNullable<T[K]>> => {
-    return usuario[property] !== undefined && usuario[property] !== null
-  }
-
   useEffect(() => {
     const usuarios = getUsuariosPermitidos()
     if (filtro.trim() === "") {
@@ -316,13 +308,13 @@ export default function BuscaPage() {
         }
 
         // Busca por endereço (se existir)
-        if (hasProperty(usuario, "endereco") && usuario.endereco.toLowerCase().includes(searchTerm)) {
+        if ("endereco" in usuario && usuario.endereco.toLowerCase().includes(searchTerm)) {
           return true
         }
 
         // Busca por especialidades (se existir)
         if (
-          hasProperty(usuario, "especialidades") &&
+          "especialidades" in usuario &&
           usuario.especialidades.some((esp: string) => esp.toLowerCase().includes(searchTerm))
         ) {
           return true
@@ -519,7 +511,7 @@ export default function BuscaPage() {
                               </h3>
                               <div className="flex items-center gap-2 mt-1">
                                 <div className="flex items-center gap-1">
-                                  {hasProperty(usuario, "avaliacao") && (
+                                  {"avaliacao" in usuario && (
                                     <>
                                       {[...Array(5)].map((_, i) => (
                                         <Star
@@ -546,10 +538,8 @@ export default function BuscaPage() {
                             <div className="flex items-center gap-2 text-gray-600">
                               <MapPin className="w-4 h-4" />
                               <div>
-                                {hasProperty(usuario, "endereco") && <p className="text-sm">{usuario.endereco}</p>}
-                                {hasProperty(usuario, "cidade") && (
-                                  <p className="text-xs text-gray-500">{usuario.cidade}</p>
-                                )}
+                                {"endereco" in usuario && <p className="text-sm">{usuario.endereco}</p>}
+                                {"cidade" in usuario && <p className="text-xs text-gray-500">{usuario.cidade}</p>}
                               </div>
                             </div>
                             <div className="space-y-1">
@@ -565,7 +555,7 @@ export default function BuscaPage() {
                           </div>
 
                           {/* Especialidades */}
-                          {hasProperty(usuario, "especialidades") && (
+                          {"especialidades" in usuario && (
                             <div>
                               <p className="text-sm font-medium text-gray-700 mb-2">Especialidades:</p>
                               <div className="flex flex-wrap gap-2">

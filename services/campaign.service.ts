@@ -10,10 +10,14 @@ export interface Campaign {
   arrecadado: number
   dataInicio: string
   dataFim: string
-  status: "Ativa" | "Concluída" | "Pausada"
+  status: "pendente" | "ativa" | "aprovada" | "negada" | "concluida" | "pausada"
   userId: string
+  userName: string
   imagem?: string
   observacoes?: string
+  motivoNegacao?: string
+  aprovadoPor?: string
+  dataAprovacao?: string
   createdAt: string
   updatedAt: string
 }
@@ -29,12 +33,8 @@ export interface CreateCampaignRequest {
   imagem?: File
 }
 
-export interface UpdateCampaignRequest extends Partial<CreateCampaignRequest> {
-  id: string
-}
-
 class CampaignService {
-  private readonly baseEndpoint = "/campaigns"
+  private readonly baseEndpoint = "/campanhas"
 
   async getCampaigns(params?: {
     page?: number
@@ -52,21 +52,42 @@ class CampaignService {
 
   async createCampaign(data: CreateCampaignRequest): Promise<ApiResponse<Campaign>> {
     if (data.imagem) {
-      // Se há imagem, usar upload de arquivo
-      const { imagem, ...campaignData } = data
-      return apiClient.uploadFile<ApiResponse<Campaign>>(`${this.baseEndpoint}/with-image`, imagem, campaignData)
+      const formData = new FormData()
+      formData.append("titulo", data.titulo)
+      formData.append("descricao", data.descricao)
+      formData.append("categoria", data.categoria)
+      formData.append("meta", data.meta.toString())
+      formData.append("dataInicio", data.dataInicio)
+      formData.append("dataFim", data.dataFim)
+      if (data.observacoes) formData.append("observacoes", data.observacoes)
+      formData.append("imagem", data.imagem)
+
+      const response = await fetch(`${apiClient["baseURL"]}${this.baseEndpoint}`, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem("auth_token")}`,
+        },
+        body: formData,
+      })
+
+      return response.json()
     }
 
     return apiClient.post<ApiResponse<Campaign>>(this.baseEndpoint, data)
   }
 
-  async updateCampaign(data: UpdateCampaignRequest): Promise<ApiResponse<Campaign>> {
-    const { id, ...updateData } = data
-    return apiClient.put<ApiResponse<Campaign>>(`${this.baseEndpoint}/${id}`, updateData)
-  }
-
   async deleteCampaign(id: string): Promise<ApiResponse<void>> {
     return apiClient.delete<ApiResponse<void>>(`${this.baseEndpoint}/${id}`)
+  }
+
+  async approveCampaign(id: string): Promise<ApiResponse<Campaign>> {
+    return apiClient.patch<ApiResponse<Campaign>>(`${this.baseEndpoint}/${id}/aprovar`, {})
+  }
+
+  async denyCampaign(id: string, motivo?: string): Promise<ApiResponse<Campaign>> {
+    return apiClient.patch<ApiResponse<Campaign>>(`${this.baseEndpoint}/${id}/negar`, {
+      motivo,
+    })
   }
 
   async donateToCampaign(campaignId: string, amount: number): Promise<ApiResponse<any>> {
@@ -79,6 +100,7 @@ class CampaignService {
     ApiResponse<{
       totalCampaigns: number
       activeCampaigns: number
+      pendingCampaigns: number
       totalRaised: number
       totalGoal: number
     }>

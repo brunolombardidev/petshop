@@ -1,148 +1,114 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import type { Pet } from "@/types/api"
-import { PetService } from "@/services/pet.service"
+import { petService, type Pet, type CreatePetRequest } from "@/services/pet.service"
 import { toast } from "@/hooks/use-toast"
 
-export function usePets(ownerId?: string) {
+export function usePets() {
   const [pets, setPets] = useState<Pet[]>([])
-  const [isLoading, setIsLoading] = useState(true)
+  const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const [pagination, setPagination] = useState({
-    page: 1,
-    limit: 10,
-    total: 0,
-    totalPages: 0,
-  })
 
-  const fetchPets = async (page = 1, limit = 10) => {
+  const loadPets = async (params?: { search?: string; especie?: string }) => {
     try {
-      setIsLoading(true)
+      setLoading(true)
       setError(null)
-
-      const response = await PetService.getPets({
-        page,
-        limit,
-        ownerId,
-      })
-
+      const response = await petService.getPets(params)
       setPets(response.data)
-      setPagination({
-        page: response.page,
-        limit: response.limit,
-        total: response.total,
-        totalPages: response.totalPages,
-      })
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : "Erro ao carregar pets"
-      setError(errorMessage)
+      setError("Erro ao carregar pets")
+      console.error("Erro ao carregar pets:", err)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const createPet = async (data: CreatePetRequest) => {
+    try {
+      setLoading(true)
+      const response = await petService.createPet(data)
+      setPets((prev) => [response.data, ...prev])
+      toast({
+        title: "Sucesso!",
+        description: "Pet cadastrado com sucesso.",
+      })
+      return response.data
+    } catch (err) {
       toast({
         title: "Erro",
-        description: errorMessage,
+        description: "Erro ao cadastrar pet. Tente novamente.",
         variant: "destructive",
       })
+      throw err
     } finally {
-      setIsLoading(false)
-    }
-  }
-
-  const createPet = async (petData: Omit<Pet, "id" | "createdAt" | "updatedAt">) => {
-    try {
-      const newPet = await PetService.createPet(petData)
-      setPets((prev) => [newPet, ...prev])
-
-      toast({
-        title: "Pet cadastrado com sucesso!",
-        description: `${newPet.name} foi adicionado à sua lista de pets.`,
-      })
-
-      return newPet
-    } catch (error) {
-      console.error("Create pet error:", error)
-      throw error
-    }
-  }
-
-  const updatePet = async (id: string, petData: Partial<Pet>) => {
-    try {
-      const updatedPet = await PetService.updatePet(id, petData)
-      setPets((prev) => prev.map((pet) => (pet.id === id ? updatedPet : pet)))
-
-      toast({
-        title: "Pet atualizado com sucesso!",
-        description: `As informações de ${updatedPet.name} foram atualizadas.`,
-      })
-
-      return updatedPet
-    } catch (error) {
-      console.error("Update pet error:", error)
-      throw error
+      setLoading(false)
     }
   }
 
   const deletePet = async (id: string) => {
     try {
-      await PetService.deletePet(id)
+      setLoading(true)
+      await petService.deletePet(id)
       setPets((prev) => prev.filter((pet) => pet.id !== id))
-
       toast({
-        title: "Pet removido com sucesso!",
-        description: "O pet foi removido da sua lista.",
+        title: "Sucesso!",
+        description: "Pet excluído com sucesso.",
       })
-    } catch (error) {
-      console.error("Delete pet error:", error)
-      throw error
+    } catch (err) {
+      toast({
+        title: "Erro",
+        description: "Erro ao excluir pet. Tente novamente.",
+        variant: "destructive",
+      })
+      throw err
+    } finally {
+      setLoading(false)
     }
   }
 
   useEffect(() => {
-    fetchPets()
-  }, [ownerId])
+    loadPets()
+  }, [])
 
   return {
     pets,
-    isLoading,
+    loading,
     error,
-    pagination,
-    fetchPets,
+    loadPets,
     createPet,
-    updatePet,
     deletePet,
-    refetch: () => fetchPets(pagination.page, pagination.limit),
   }
 }
 
 export function usePet(id: string) {
   const [pet, setPet] = useState<Pet | null>(null)
-  const [isLoading, setIsLoading] = useState(true)
+  const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
-  const fetchPet = async () => {
+  const loadPet = async () => {
     try {
-      setIsLoading(true)
+      setLoading(true)
       setError(null)
-
-      const petData = await PetService.getPetById(id)
-      setPet(petData)
+      const response = await petService.getPetById(id)
+      setPet(response.data)
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : "Erro ao carregar pet"
-      setError(errorMessage)
+      setError("Erro ao carregar pet")
+      console.error("Erro ao carregar pet:", err)
     } finally {
-      setIsLoading(false)
+      setLoading(false)
     }
   }
 
   useEffect(() => {
     if (id) {
-      fetchPet()
+      loadPet()
     }
   }, [id])
 
   return {
     pet,
-    isLoading,
+    loading,
     error,
-    refetch: fetchPet,
+    loadPet,
   }
 }

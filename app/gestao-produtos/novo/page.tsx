@@ -8,40 +8,92 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { ArrowLeft, Package, Upload, Save } from "lucide-react"
+import { ArrowLeft, Package, Upload, Loader2 } from "lucide-react"
 import { FloatingButtons } from "@/components/floating-buttons"
+import { useProducts } from "@/hooks/use-products"
+import type { CreateProductData } from "@/services/product.service"
 
-export default function NovoProdutoPage() {
+export default function NovoProductPage() {
   const router = useRouter()
-  const [formData, setFormData] = useState({
+  const { createProduct, loading } = useProducts()
+
+  const [formData, setFormData] = useState<CreateProductData>({
     nome: "",
-    categoria: "",
-    preco: "",
-    desconto: "",
     descricao: "",
-    status: "ativo",
-    codigo: "",
-    estoque: "",
-    peso: "",
-    dimensoes: "",
-    marca: "",
+    preco: 0,
+    categoria: "",
+    imagem: "",
   })
 
-  const handleInputChange = (field: string, value: string) => {
+  const [errors, setErrors] = useState<Partial<CreateProductData>>({})
+
+  const categorias = [
+    "Ração",
+    "Medicamentos",
+    "Brinquedos",
+    "Acessórios",
+    "Higiene",
+    "Camas e Casinhas",
+    "Coleiras e Guias",
+    "Transporte",
+    "Aquarismo",
+    "Outros",
+  ]
+
+  const validateForm = (): boolean => {
+    const newErrors: Partial<CreateProductData> = {}
+
+    if (!formData.nome.trim()) {
+      newErrors.nome = "Nome é obrigatório"
+    }
+
+    if (!formData.descricao.trim()) {
+      newErrors.descricao = "Descrição é obrigatória"
+    }
+
+    if (formData.preco <= 0) {
+      newErrors.preco = "Preço deve ser maior que zero"
+    }
+
+    if (!formData.categoria) {
+      newErrors.categoria = "Categoria é obrigatória"
+    }
+
+    setErrors(newErrors)
+    return Object.keys(newErrors).length === 0
+  }
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+
+    if (!validateForm()) {
+      return
+    }
+
+    try {
+      await createProduct(formData)
+      router.push("/gestao-produtos")
+    } catch (error) {
+      // Error is handled by the hook
+      console.error("Erro ao criar produto:", error)
+    }
+  }
+
+  const handleInputChange = (field: keyof CreateProductData, value: string | number) => {
     setFormData((prev) => ({
       ...prev,
       [field]: value,
     }))
-  }
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault()
-    // Aqui você implementaria a lógica para salvar o produto
-    console.log("Dados do produto:", formData)
-    // Redirecionar de volta para a lista de produtos
-    router.push("/gestao-produtos")
+    // Clear error when user starts typing
+    if (errors[field]) {
+      setErrors((prev) => ({
+        ...prev,
+        [field]: undefined,
+      }))
+    }
   }
 
   return (
@@ -54,102 +106,51 @@ export default function NovoProdutoPage() {
               variant="ghost"
               size="icon"
               onClick={() => router.back()}
-              className="hover:bg-orange-100 rounded-xl"
+              className="hover:bg-[#D6DD83]/20 rounded-xl"
             >
               <ArrowLeft className="h-5 w-5 text-gray-700" />
             </Button>
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-gradient-to-br from-purple-400 to-purple-500 rounded-xl flex items-center justify-center shadow-lg">
+              <div className="w-10 h-10 bg-gradient-to-br from-bpet-primary to-bpet-secondary rounded-xl flex items-center justify-center shadow-lg">
                 <Package className="w-5 h-5 text-white" />
               </div>
               <div>
                 <h1 className="font-bold text-xl text-gray-900">Novo Produto</h1>
-                <p className="text-sm text-gray-600">Adicione um novo produto ao catálogo</p>
+                <p className="text-sm text-gray-600">Cadastre um novo produto ou serviço</p>
               </div>
             </div>
           </div>
         </div>
       </header>
 
-      {/* Conteúdo Principal */}
+      {/* Formulário */}
       <main className="px-6 py-8">
-        <div className="max-w-4xl mx-auto">
-          <form onSubmit={handleSubmit} className="space-y-8">
-            {/* Informações Básicas */}
-            <Card className="border-0 shadow-xl bg-white/80 backdrop-blur-sm rounded-2xl">
-              <CardHeader>
-                <CardTitle className="text-xl font-bold text-gray-900 flex items-center gap-2">
-                  <Package className="w-5 h-5 text-purple-500" />
-                  Informações Básicas
-                </CardTitle>
-                <CardDescription className="text-gray-600">Dados principais do produto</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-6">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div className="space-y-2">
-                    <Label htmlFor="nome" className="text-sm font-medium text-gray-700">
-                      Nome do Produto *
-                    </Label>
-                    <Input
-                      id="nome"
-                      type="text"
-                      value={formData.nome}
-                      onChange={(e) => handleInputChange("nome", e.target.value)}
-                      placeholder="Ex: Ração Premium Golden 15kg"
-                      className="h-12 border-0 bg-gray-50 rounded-xl focus:ring-2 focus:ring-purple-400/20"
-                      required
-                    />
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="codigo" className="text-sm font-medium text-gray-700">
-                      Código do Produto *
-                    </Label>
-                    <Input
-                      id="codigo"
-                      type="text"
-                      value={formData.codigo}
-                      onChange={(e) => handleInputChange("codigo", e.target.value)}
-                      placeholder="Ex: RAC001"
-                      className="h-12 border-0 bg-gray-50 rounded-xl focus:ring-2 focus:ring-purple-400/20"
-                      required
-                    />
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="categoria" className="text-sm font-medium text-gray-700">
-                      Categoria *
-                    </Label>
-                    <Select value={formData.categoria} onValueChange={(value) => handleInputChange("categoria", value)}>
-                      <SelectTrigger className="h-12 border-0 bg-gray-50 rounded-xl focus:ring-2 focus:ring-purple-400/20">
-                        <SelectValue placeholder="Selecione uma categoria" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="alimentacao">Alimentação</SelectItem>
-                        <SelectItem value="brinquedos">Brinquedos</SelectItem>
-                        <SelectItem value="higiene">Higiene</SelectItem>
-                        <SelectItem value="medicamentos">Medicamentos</SelectItem>
-                        <SelectItem value="acessorios">Acessórios</SelectItem>
-                        <SelectItem value="camas">Camas e Casinhas</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="marca" className="text-sm font-medium text-gray-700">
-                      Marca
-                    </Label>
-                    <Input
-                      id="marca"
-                      type="text"
-                      value={formData.marca}
-                      onChange={(e) => handleInputChange("marca", e.target.value)}
-                      placeholder="Ex: Golden"
-                      className="h-12 border-0 bg-gray-50 rounded-xl focus:ring-2 focus:ring-purple-400/20"
-                    />
-                  </div>
+        <div className="max-w-2xl mx-auto">
+          <Card className="border-0 shadow-lg bg-white/80 backdrop-blur-sm rounded-2xl">
+            <CardHeader className="pb-6">
+              <CardTitle className="text-2xl font-bold text-gray-900">Informações do Produto</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <form onSubmit={handleSubmit} className="space-y-6">
+                {/* Nome do Produto */}
+                <div className="space-y-2">
+                  <Label htmlFor="nome" className="text-sm font-medium text-gray-700">
+                    Nome do Produto *
+                  </Label>
+                  <Input
+                    id="nome"
+                    type="text"
+                    value={formData.nome}
+                    onChange={(e) => handleInputChange("nome", e.target.value)}
+                    placeholder="Ex: Ração Premium para Cães Adultos"
+                    className={`h-12 rounded-xl border-0 bg-gray-50 focus:ring-[#30B2B0]/20 focus:border-[#30B2B0] ${
+                      errors.nome ? "ring-2 ring-red-500" : ""
+                    }`}
+                  />
+                  {errors.nome && <p className="text-sm text-red-600">{errors.nome}</p>}
                 </div>
 
+                {/* Descrição */}
                 <div className="space-y-2">
                   <Label htmlFor="descricao" className="text-sm font-medium text-gray-700">
                     Descrição *
@@ -159,21 +160,16 @@ export default function NovoProdutoPage() {
                     value={formData.descricao}
                     onChange={(e) => handleInputChange("descricao", e.target.value)}
                     placeholder="Descreva as características e benefícios do produto..."
-                    className="min-h-[100px] border-0 bg-gray-50 rounded-xl focus:ring-2 focus:ring-purple-400/20 resize-none"
-                    required
+                    rows={4}
+                    className={`rounded-xl border-0 bg-gray-50 focus:ring-[#30B2B0]/20 focus:border-[#30B2B0] resize-none ${
+                      errors.descricao ? "ring-2 ring-red-500" : ""
+                    }`}
                   />
+                  {errors.descricao && <p className="text-sm text-red-600">{errors.descricao}</p>}
                 </div>
-              </CardContent>
-            </Card>
 
-            {/* Preço e Estoque */}
-            <Card className="border-0 shadow-xl bg-white/80 backdrop-blur-sm rounded-2xl">
-              <CardHeader>
-                <CardTitle className="text-xl font-bold text-gray-900">Preço e Estoque</CardTitle>
-                <CardDescription className="text-gray-600">Informações comerciais do produto</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-6">
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                {/* Preço e Categoria */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div className="space-y-2">
                     <Label htmlFor="preco" className="text-sm font-medium text-gray-700">
                       Preço (R$) *
@@ -182,148 +178,114 @@ export default function NovoProdutoPage() {
                       id="preco"
                       type="number"
                       step="0.01"
-                      value={formData.preco}
-                      onChange={(e) => handleInputChange("preco", e.target.value)}
-                      placeholder="0,00"
-                      className="h-12 border-0 bg-gray-50 rounded-xl focus:ring-2 focus:ring-purple-400/20"
-                      required
-                    />
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="desconto" className="text-sm font-medium text-gray-700">
-                      Desconto (%)
-                    </Label>
-                    <Input
-                      id="desconto"
-                      type="number"
                       min="0"
-                      max="100"
-                      value={formData.desconto}
-                      onChange={(e) => handleInputChange("desconto", e.target.value)}
-                      placeholder="0"
-                      className="h-12 border-0 bg-gray-50 rounded-xl focus:ring-2 focus:ring-purple-400/20"
-                    />
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="estoque" className="text-sm font-medium text-gray-700">
-                      Quantidade em Estoque *
-                    </Label>
-                    <Input
-                      id="estoque"
-                      type="number"
-                      min="0"
-                      value={formData.estoque}
-                      onChange={(e) => handleInputChange("estoque", e.target.value)}
-                      placeholder="0"
-                      className="h-12 border-0 bg-gray-50 rounded-xl focus:ring-2 focus:ring-purple-400/20"
-                      required
-                    />
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Especificações Técnicas */}
-            <Card className="border-0 shadow-xl bg-white/80 backdrop-blur-sm rounded-2xl">
-              <CardHeader>
-                <CardTitle className="text-xl font-bold text-gray-900">Especificações Técnicas</CardTitle>
-                <CardDescription className="text-gray-600">Informações adicionais do produto</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-6">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div className="space-y-2">
-                    <Label htmlFor="peso" className="text-sm font-medium text-gray-700">
-                      Peso (kg)
-                    </Label>
-                    <Input
-                      id="peso"
-                      type="number"
-                      step="0.01"
-                      value={formData.peso}
-                      onChange={(e) => handleInputChange("peso", e.target.value)}
+                      value={formData.preco || ""}
+                      onChange={(e) => handleInputChange("preco", Number.parseFloat(e.target.value) || 0)}
                       placeholder="0,00"
-                      className="h-12 border-0 bg-gray-50 rounded-xl focus:ring-2 focus:ring-purple-400/20"
+                      className={`h-12 rounded-xl border-0 bg-gray-50 focus:ring-[#30B2B0]/20 focus:border-[#30B2B0] ${
+                        errors.preco ? "ring-2 ring-red-500" : ""
+                      }`}
                     />
+                    {errors.preco && <p className="text-sm text-red-600">{errors.preco}</p>}
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="dimensoes" className="text-sm font-medium text-gray-700">
-                      Dimensões (cm)
+                    <Label htmlFor="categoria" className="text-sm font-medium text-gray-700">
+                      Categoria *
                     </Label>
-                    <Input
-                      id="dimensoes"
-                      type="text"
-                      value={formData.dimensoes}
-                      onChange={(e) => handleInputChange("dimensoes", e.target.value)}
-                      placeholder="Ex: 30x20x15"
-                      className="h-12 border-0 bg-gray-50 rounded-xl focus:ring-2 focus:ring-purple-400/20"
-                    />
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="status" className="text-sm font-medium text-gray-700">
-                      Status *
-                    </Label>
-                    <Select value={formData.status} onValueChange={(value) => handleInputChange("status", value)}>
-                      <SelectTrigger className="h-12 border-0 bg-gray-50 rounded-xl focus:ring-2 focus:ring-purple-400/20">
-                        <SelectValue />
+                    <Select value={formData.categoria} onValueChange={(value) => handleInputChange("categoria", value)}>
+                      <SelectTrigger
+                        className={`h-12 rounded-xl border-0 bg-gray-50 focus:ring-[#30B2B0]/20 focus:border-[#30B2B0] ${
+                          errors.categoria ? "ring-2 ring-red-500" : ""
+                        }`}
+                      >
+                        <SelectValue placeholder="Selecione uma categoria" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="ativo">Ativo</SelectItem>
-                        <SelectItem value="inativo">Inativo</SelectItem>
+                        {categorias.map((categoria) => (
+                          <SelectItem key={categoria} value={categoria}>
+                            {categoria}
+                          </SelectItem>
+                        ))}
                       </SelectContent>
                     </Select>
+                    {errors.categoria && <p className="text-sm text-red-600">{errors.categoria}</p>}
                   </div>
                 </div>
-              </CardContent>
-            </Card>
 
-            {/* Imagem do Produto */}
-            <Card className="border-0 shadow-xl bg-white/80 backdrop-blur-sm rounded-2xl">
-              <CardHeader>
-                <CardTitle className="text-xl font-bold text-gray-900">Imagem do Produto</CardTitle>
-                <CardDescription className="text-gray-600">Adicione uma imagem para o produto</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="border-2 border-dashed border-gray-300 rounded-xl p-8 text-center hover:border-purple-400 transition-colors">
-                  <Upload className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-                  <p className="text-gray-600 mb-2">Clique para fazer upload ou arraste a imagem aqui</p>
-                  <p className="text-sm text-gray-500">PNG, JPG ou JPEG até 5MB</p>
-                  <Button type="button" variant="outline" className="mt-4 rounded-xl bg-transparent">
-                    Selecionar Arquivo
+                {/* Upload de Imagem */}
+                <div className="space-y-2">
+                  <Label htmlFor="imagem" className="text-sm font-medium text-gray-700">
+                    URL da Imagem (opcional)
+                  </Label>
+                  <div className="relative">
+                    <Input
+                      id="imagem"
+                      type="url"
+                      value={formData.imagem || ""}
+                      onChange={(e) => handleInputChange("imagem", e.target.value)}
+                      placeholder="https://exemplo.com/imagem.jpg"
+                      className="h-12 rounded-xl border-0 bg-gray-50 focus:ring-[#30B2B0]/20 focus:border-[#30B2B0] pl-12"
+                    />
+                    <Upload className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+                  </div>
+                  <p className="text-xs text-gray-500">
+                    Cole a URL de uma imagem do produto ou deixe em branco para usar uma imagem padrão
+                  </p>
+                </div>
+
+                {/* Preview da Imagem */}
+                {formData.imagem && (
+                  <div className="space-y-2">
+                    <Label className="text-sm font-medium text-gray-700">Preview da Imagem</Label>
+                    <div className="w-32 h-32 rounded-xl overflow-hidden bg-gray-100 border-2 border-dashed border-gray-300">
+                      <img
+                        src={formData.imagem || "/placeholder.svg"}
+                        alt="Preview"
+                        className="w-full h-full object-cover"
+                        onError={(e) => {
+                          const target = e.target as HTMLImageElement
+                          target.src = "/placeholder.svg?height=128&width=128"
+                        }}
+                      />
+                    </div>
+                  </div>
+                )}
+
+                {/* Botões */}
+                <div className="flex gap-4 pt-6">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => router.back()}
+                    className="flex-1 h-12 rounded-xl border-gray-300 hover:bg-gray-50"
+                    disabled={loading}
+                  >
+                    Cancelar
+                  </Button>
+                  <Button
+                    type="submit"
+                    className="flex-1 h-12 rounded-xl bg-gradient-to-r from-bpet-primary to-bpet-secondary hover:from-bpet-primary/90 hover:to-bpet-secondary/90 text-white font-medium"
+                    disabled={loading}
+                  >
+                    {loading ? (
+                      <>
+                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                        Salvando...
+                      </>
+                    ) : (
+                      "Salvar Produto"
+                    )}
                   </Button>
                 </div>
-              </CardContent>
-            </Card>
-
-            {/* Botões de Ação */}
-            <div className="flex justify-center gap-4 pt-6">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => router.back()}
-                className="h-14 px-8 py-3 rounded-xl border-gray-300 hover:bg-gray-50"
-              >
-                Cancelar
-              </Button>
-              <Button
-                type="submit"
-                className="h-14 px-8 py-3 rounded-xl bg-gradient-to-r from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700 text-white shadow-lg hover:shadow-xl transition-all duration-200"
-              >
-                <Save className="w-5 h-5 mr-2" />
-                Salvar Produto
-              </Button>
-            </div>
-          </form>
+              </form>
+            </CardContent>
+          </Card>
         </div>
       </main>
 
       {/* Botões Flutuantes */}
       <FloatingButtons />
-      {/* Espaçamento para botões flutuantes */}
-      <div className="pb-20"></div>
     </div>
   )
 }

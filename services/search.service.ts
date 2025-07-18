@@ -3,7 +3,7 @@ import type { ApiResponse } from "@/types/api"
 
 export interface SearchResult {
   id: string
-  tipo: "usuario" | "pet" | "produto" | "servico" | "empresa"
+  tipo: "petshop" | "fornecedor" | "servico" | "produto" | "usuario"
   titulo: string
   subtitulo?: string
   descricao?: string
@@ -33,7 +33,7 @@ export interface SearchFilters {
 }
 
 export interface SearchParams extends SearchFilters {
-  query: string
+  query?: string
   page?: number
   limit?: number
   latitude?: number
@@ -56,9 +56,10 @@ export interface SearchResponse {
 }
 
 class SearchService {
-  private readonly baseEndpoint = "/search"
+  private readonly baseEndpoint = "/buscas"
 
-  async search(params: SearchParams): Promise<ApiResponse<SearchResponse>> {
+  // GET /buscas - Buscar por petshops, fornecedores e serviços
+  async search(params?: SearchParams): Promise<ApiResponse<SearchResponse>> {
     return apiClient.get<ApiResponse<SearchResponse>>(this.baseEndpoint, params)
   }
 
