@@ -1,70 +1,80 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { ArrowLeft, UserPlus, Search, Plus, Calendar, DollarSign, TrendingUp } from "lucide-react"
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog"
+import { ArrowLeft, UserPlus, Search, Plus, Calendar, DollarSign, TrendingUp, Trash2 } from "lucide-react"
 import { FloatingButtons } from "@/components/floating-buttons"
-
-// Dados mockados das indicações
-const indicacoesMockadas = [
-  {
-    id: "1",
-    nomeIndicado: "João Silva",
-    emailIndicado: "joao@email.com",
-    telefoneIndicado: "(11) 99999-8888",
-    tipoIndicacao: "cliente",
-    status: "aprovada",
-    dataIndicacao: "2024-01-10",
-    dataAprovacao: "2024-01-12",
-    comissao: 50.0,
-    observacoes: "Cliente interessado em serviços veterinários",
-  },
-  {
-    id: "2",
-    nomeIndicado: "PetShop Amigo Fiel",
-    emailIndicado: "contato@amigofiel.com",
-    telefoneIndicado: "(11) 88888-7777",
-    tipoIndicacao: "petshop",
-    status: "pendente",
-    dataIndicacao: "2024-01-15",
-    dataAprovacao: null,
-    comissao: 150.0,
-    observacoes: "Petshop interessado em parceria",
-  },
-  {
-    id: "3",
-    nomeIndicado: "Maria Costa",
-    emailIndicado: "maria@email.com",
-    telefoneIndicado: "(11) 77777-6666",
-    tipoIndicacao: "cliente",
-    status: "rejeitada",
-    dataIndicacao: "2024-01-08",
-    dataAprovacao: "2024-01-09",
-    comissao: 0,
-    observacoes: "Não atendeu aos critérios mínimos",
-  },
-  {
-    id: "4",
-    nomeIndicado: "Distribuidora PetMax",
-    emailIndicado: "vendas@petmax.com",
-    telefoneIndicado: "(11) 66666-5555",
-    tipoIndicacao: "fornecedor",
-    status: "aprovada",
-    dataIndicacao: "2024-01-05",
-    dataAprovacao: "2024-01-07",
-    comissao: 200.0,
-    observacoes: "Fornecedor com ótimos produtos",
-  },
-]
+import { indicationService, type Indication } from "@/services/indication.service"
+import { useAuthState } from "@/hooks/use-auth"
+import { toast } from "@/hooks/use-toast"
 
 export default function IndicacoesPage() {
   const router = useRouter()
-  const [indicacoes, setIndicacoes] = useState(indicacoesMockadas)
+  const { isAdmin } = useAuthState()
+  const [indicacoes, setIndicacoes] = useState<Indication[]>([])
+  const [loading, setLoading] = useState(true)
   const [filtro, setFiltro] = useState("")
+  const [deletingId, setDeletingId] = useState<string | null>(null)
+
+  useEffect(() => {
+    loadIndicacoes()
+  }, [])
+
+  const loadIndicacoes = async () => {
+    try {
+      setLoading(true)
+      const response = await indicationService.getIndications({
+        page: 1,
+        limit: 100,
+      })
+      setIndicacoes(response.data)
+    } catch (error) {
+      console.error("Erro ao carregar indicações:", error)
+      toast({
+        title: "Erro",
+        description: "Erro ao carregar indicações. Tente novamente.",
+        variant: "destructive",
+      })
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const handleDelete = async (id: string) => {
+    try {
+      setDeletingId(id)
+      await indicationService.deleteIndication(id)
+      setIndicacoes(indicacoes.filter((indicacao) => indicacao.id !== id))
+      toast({
+        title: "Sucesso!",
+        description: "Indicação excluída com sucesso.",
+      })
+    } catch (error) {
+      console.error("Erro ao excluir indicação:", error)
+      toast({
+        title: "Erro",
+        description: "Erro ao excluir indicação. Tente novamente.",
+        variant: "destructive",
+      })
+    } finally {
+      setDeletingId(null)
+    }
+  }
 
   const indicacoesFiltradas = indicacoes.filter(
     (indicacao) =>
@@ -106,6 +116,17 @@ export default function IndicacoesPage() {
     aprovadas: indicacoes.filter((i) => i.status === "aprovada").length,
     pendentes: indicacoes.filter((i) => i.status === "pendente").length,
     comissaoTotal: indicacoes.filter((i) => i.status === "aprovada").reduce((sum, i) => sum + i.comissao, 0),
+  }
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-[#D6DD83]/20 via-[#FFBDB6]/20 to-[#30B2B0]/20 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-bpet-primary mx-auto mb-4"></div>
+          <p className="text-gray-600">Carregando indicações...</p>
+        </div>
+      </div>
+    )
   }
 
   return (
@@ -252,7 +273,7 @@ export default function IndicacoesPage() {
                                 {getStatusBadge(indicacao.status)}
                               </div>
                             </div>
-                            <div className="text-right">
+                            <div className="text-right flex flex-col items-end gap-2">
                               <p className="text-sm text-gray-500 mb-1">
                                 <Calendar className="w-4 h-4 inline mr-1" />
                                 Indicado em {new Date(indicacao.dataIndicacao).toLocaleDateString("pt-BR")}
@@ -267,6 +288,40 @@ export default function IndicacoesPage() {
                                   <DollarSign className="w-4 h-4 inline mr-1" />
                                   R$ {indicacao.comissao.toFixed(2)}
                                 </div>
+                              )}
+                              {/* Botão Delete - Apenas para Admin */}
+                              {isAdmin && (
+                                <AlertDialog>
+                                  <AlertDialogTrigger asChild>
+                                    <Button
+                                      variant="destructive"
+                                      size="sm"
+                                      className="mt-2"
+                                      disabled={deletingId === indicacao.id}
+                                    >
+                                      <Trash2 className="w-4 h-4 mr-1" />
+                                      {deletingId === indicacao.id ? "Excluindo..." : "Excluir"}
+                                    </Button>
+                                  </AlertDialogTrigger>
+                                  <AlertDialogContent>
+                                    <AlertDialogHeader>
+                                      <AlertDialogTitle>Confirmar Exclusão</AlertDialogTitle>
+                                      <AlertDialogDescription>
+                                        Tem certeza que deseja excluir a indicação de "{indicacao.nomeIndicado}"? Esta
+                                        ação não pode ser desfeita.
+                                      </AlertDialogDescription>
+                                    </AlertDialogHeader>
+                                    <AlertDialogFooter>
+                                      <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                                      <AlertDialogAction
+                                        onClick={() => handleDelete(indicacao.id)}
+                                        className="bg-red-600 hover:bg-red-700"
+                                      >
+                                        Excluir
+                                      </AlertDialogAction>
+                                    </AlertDialogFooter>
+                                  </AlertDialogContent>
+                                </AlertDialog>
                               )}
                             </div>
                           </div>

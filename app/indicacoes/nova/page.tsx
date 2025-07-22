@@ -1,7 +1,6 @@
 "use client"
 
 import type React from "react"
-
 import { useState } from "react"
 import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
@@ -12,28 +11,45 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { ArrowLeft, UserPlus, Save, Users, Store, Package, Building } from "lucide-react"
 import { FloatingButtons } from "@/components/floating-buttons"
+import { indicationService, type CreateIndicationRequest } from "@/services/indication.service"
+import { toast } from "@/hooks/use-toast"
 
 export default function NovaIndicacaoPage() {
   const router = useRouter()
-  const [formData, setFormData] = useState({
+  const [loading, setLoading] = useState(false)
+  const [formData, setFormData] = useState<CreateIndicationRequest>({
     nomeIndicado: "",
     emailIndicado: "",
     telefoneIndicado: "",
-    tipoIndicacao: "",
+    tipoIndicacao: "cliente",
     observacoes: "",
-    // Campos específicos por tipo
     empresaRamo: "",
     empresaTamanho: "",
     petshopEspecialidade: "",
     fornecedorProdutos: "",
   })
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    // Simular criação da indicação
-    console.log("Indicação criada:", formData)
-    alert("Indicação enviada com sucesso! Aguarde a análise.")
-    router.push("/indicacoes")
+    setLoading(true)
+
+    try {
+      await indicationService.createIndication(formData)
+      toast({
+        title: "Sucesso!",
+        description: "Indicação enviada com sucesso! Aguarde a análise.",
+      })
+      router.push("/indicacoes")
+    } catch (error) {
+      console.error("Erro ao criar indicação:", error)
+      toast({
+        title: "Erro",
+        description: "Erro ao enviar indicação. Tente novamente.",
+        variant: "destructive",
+      })
+    } finally {
+      setLoading(false)
+    }
   }
 
   const getComissaoInfo = (tipo: string) => {
@@ -62,7 +78,7 @@ export default function NovaIndicacaoPage() {
               </Label>
               <Input
                 id="empresaRamo"
-                value={formData.empresaRamo}
+                value={formData.empresaRamo || ""}
                 onChange={(e) => setFormData({ ...formData, empresaRamo: e.target.value })}
                 className="h-12 border-gray-200 focus:border-[#30B2B0] focus:ring-[#30B2B0]/20 rounded-xl"
                 placeholder="Ex: Tecnologia, Saúde, Educação..."
@@ -74,7 +90,7 @@ export default function NovaIndicacaoPage() {
                 Tamanho da Empresa
               </Label>
               <Select
-                value={formData.empresaTamanho}
+                value={formData.empresaTamanho || ""}
                 onValueChange={(value) => setFormData({ ...formData, empresaTamanho: value })}
               >
                 <SelectTrigger className="h-12 border-gray-200 focus:border-[#30B2B0] focus:ring-[#30B2B0]/20 rounded-xl">
@@ -99,7 +115,7 @@ export default function NovaIndicacaoPage() {
             </Label>
             <Input
               id="petshopEspecialidade"
-              value={formData.petshopEspecialidade}
+              value={formData.petshopEspecialidade || ""}
               onChange={(e) => setFormData({ ...formData, petshopEspecialidade: e.target.value })}
               className="h-12 border-gray-200 focus:border-[#30B2B0] focus:ring-[#30B2B0]/20 rounded-xl"
               placeholder="Ex: Veterinária, Banho e Tosa, Pet Shop..."
@@ -115,7 +131,7 @@ export default function NovaIndicacaoPage() {
             </Label>
             <Input
               id="fornecedorProdutos"
-              value={formData.fornecedorProdutos}
+              value={formData.fornecedorProdutos || ""}
               onChange={(e) => setFormData({ ...formData, fornecedorProdutos: e.target.value })}
               className="h-12 border-gray-200 focus:border-[#30B2B0] focus:ring-[#30B2B0]/20 rounded-xl"
               placeholder="Ex: Ração, Medicamentos, Brinquedos..."
@@ -237,7 +253,9 @@ export default function NovaIndicacaoPage() {
                     </Label>
                     <Select
                       value={formData.tipoIndicacao}
-                      onValueChange={(value) => setFormData({ ...formData, tipoIndicacao: value })}
+                      onValueChange={(value: "cliente" | "petshop" | "fornecedor" | "empresa") =>
+                        setFormData({ ...formData, tipoIndicacao: value })
+                      }
                       required
                     >
                       <SelectTrigger className="h-12 border-gray-200 focus:border-[#30B2B0] focus:ring-[#30B2B0]/20 rounded-xl">
@@ -282,7 +300,7 @@ export default function NovaIndicacaoPage() {
                   </Label>
                   <Textarea
                     id="observacoes"
-                    value={formData.observacoes}
+                    value={formData.observacoes || ""}
                     onChange={(e) => setFormData({ ...formData, observacoes: e.target.value })}
                     className="min-h-[100px] border-gray-200 focus:border-[#30B2B0] focus:ring-[#30B2B0]/20 rounded-xl resize-none"
                     placeholder="Informações adicionais sobre o indicado..."
@@ -319,15 +337,17 @@ export default function NovaIndicacaoPage() {
                     onClick={() => router.back()}
                     variant="outline"
                     className="flex-1 h-12 rounded-xl"
+                    disabled={loading}
                   >
                     Cancelar
                   </Button>
                   <Button
                     type="submit"
                     className="flex-1 h-12 bg-gradient-to-r from-bpet-primary to-bpet-secondary hover:from-bpet-secondary hover:to-bpet-primary text-white rounded-xl"
+                    disabled={loading}
                   >
                     <Save className="w-4 h-4 mr-2" />
-                    Enviar Indicação
+                    {loading ? "Enviando..." : "Enviar Indicação"}
                   </Button>
                 </div>
               </form>

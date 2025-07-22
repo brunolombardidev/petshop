@@ -1,91 +1,40 @@
 "use client"
-
-import { useState } from "react"
 import { useRouter, useParams } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { ArrowLeft, PawPrint, Calendar, Heart, Syringe, FileText, Camera, Edit, Phone, Mail } from "lucide-react"
 import { FloatingButtons } from "@/components/floating-buttons"
-
-// Dados mockados dos pets - em uma aplicação real, isso viria de uma API
-const petsData = {
-  "1": {
-    id: "1",
-    nome: "Rex",
-    raca: "Golden Retriever",
-    porte: "Grande",
-    sexo: "Macho",
-    nascimento: "2019-03-15",
-    idade: "5 anos",
-    foto: "/placeholder.svg?height=300&width=300",
-    observacoes:
-      "Rex é um cão muito dócil e brincalhão. Adora nadar e brincar com bola. Tem alergia a frango, por isso usa ração hipoalergênica. É muito sociável com outros cães e crianças.",
-    dono: {
-      nome: "Maria Silva",
-      telefone: "(11) 99999-9999",
-      email: "maria@email.com",
-    },
-    ultimaConsulta: "2024-01-15",
-    proximaVacina: "2024-03-15",
-  },
-  "2": {
-    id: "2",
-    nome: "Mimi",
-    raca: "Gato Persa",
-    porte: "Pequeno",
-    sexo: "Fêmea",
-    nascimento: "2021-07-20",
-    idade: "3 anos",
-    foto: "/placeholder.svg?height=300&width=300",
-    observacoes:
-      "Mimi é uma gata muito carinhosa, mas um pouco tímida com estranhos. Gosta de lugares altos e tem o hábito de dormir no sol. Precisa de escovação diária devido ao pelo longo.",
-    dono: {
-      nome: "João Santos",
-      telefone: "(11) 88888-8888",
-      email: "joao@email.com",
-    },
-    ultimaConsulta: "2024-01-10",
-    proximaVacina: "2024-04-20",
-  },
-  "3": {
-    id: "3",
-    nome: "Thor",
-    raca: "Pastor Alemão",
-    porte: "Grande",
-    sexo: "Macho",
-    nascimento: "2017-11-08",
-    idade: "7 anos",
-    foto: "/placeholder.svg?height=300&width=300",
-    observacoes:
-      "Thor é um cão muito inteligente e protetor. Foi treinado como cão de guarda. Precisa de exercícios diários intensos. Tem displasia de quadril leve, controlada com medicação.",
-    dono: {
-      nome: "Ana Costa",
-      telefone: "(11) 77777-7777",
-      email: "ana@email.com",
-    },
-    ultimaConsulta: "2023-12-20",
-    proximaVacina: "2024-02-08",
-  },
-}
+import { usePet } from "@/hooks/use-pets"
 
 export default function PetProfilePage() {
   const router = useRouter()
   const params = useParams()
   const petId = params.id as string
-  const [activeTab, setActiveTab] = useState("info")
 
-  // Busca os dados do pet
-  const pet = petsData[petId as keyof typeof petsData]
+  const { pet, isLoading, error } = usePet(petId)
 
-  if (!pet) {
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-orange-50/50 via-amber-50/30 to-yellow-50/50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-bpet-primary mx-auto mb-4"></div>
+          <p className="text-gray-600">Carregando dados do pet...</p>
+        </div>
+      </div>
+    )
+  }
+
+  if (error || !pet) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-orange-50/50 via-amber-50/30 to-yellow-50/50 flex items-center justify-center">
         <Card className="w-full max-w-md">
           <CardContent className="text-center p-8">
             <PawPrint className="w-16 h-16 text-gray-400 mx-auto mb-4" />
             <h2 className="text-xl font-bold text-gray-900 mb-2">Pet não encontrado</h2>
-            <p className="text-gray-600 mb-4">O pet que você está procurando não existe.</p>
+            <p className="text-gray-600 mb-4">
+              O pet que você está procurando não existe ou você não tem permissão para visualizá-lo.
+            </p>
             <Button onClick={() => router.back()}>Voltar</Button>
           </CardContent>
         </Card>
@@ -94,7 +43,7 @@ export default function PetProfilePage() {
   }
 
   const getPorteColor = (porte: string) => {
-    switch (porte.toLowerCase()) {
+    switch (porte?.toLowerCase()) {
       case "pequeno":
         return "bg-green-100 text-green-800"
       case "médio":
@@ -107,7 +56,7 @@ export default function PetProfilePage() {
   }
 
   const getSexoColor = (sexo: string) => {
-    return sexo.toLowerCase() === "macho" ? "bg-blue-100 text-blue-800" : "bg-pink-100 text-pink-800"
+    return sexo?.toLowerCase() === "macho" ? "bg-blue-100 text-blue-800" : "bg-pink-100 text-pink-800"
   }
 
   return (
@@ -129,8 +78,8 @@ export default function PetProfilePage() {
                 <PawPrint className="w-5 h-5 text-white" />
               </div>
               <div>
-                <h1 className="font-bold text-xl text-gray-900">Perfil do {pet.nome}</h1>
-                <p className="text-sm text-gray-600">{pet.raca}</p>
+                <h1 className="font-bold text-xl text-gray-900">Perfil do {pet.name}</h1>
+                <p className="text-sm text-gray-600">{pet.breed}</p>
               </div>
             </div>
           </div>
@@ -152,8 +101,8 @@ export default function PetProfilePage() {
                 <div className="lg:col-span-1">
                   <div className="relative">
                     <img
-                      src={pet.foto || "/placeholder.svg"}
-                      alt={pet.nome}
+                      src={pet.photo || "/placeholder.svg?height=300&width=300"}
+                      alt={pet.name}
                       className="w-full aspect-square object-cover rounded-2xl shadow-lg"
                     />
                     <Button
@@ -168,11 +117,11 @@ export default function PetProfilePage() {
                 {/* Informações do Pet */}
                 <div className="lg:col-span-2 space-y-6">
                   <div>
-                    <h2 className="text-3xl font-bold text-gray-900 mb-2">{pet.nome}</h2>
+                    <h2 className="text-3xl font-bold text-gray-900 mb-2">{pet.name}</h2>
                     <div className="flex flex-wrap gap-2 mb-4">
-                      <Badge className={`${getPorteColor(pet.porte)} border-0`}>{pet.porte}</Badge>
-                      <Badge className={`${getSexoColor(pet.sexo)} border-0`}>{pet.sexo}</Badge>
-                      <Badge className="bg-purple-100 text-purple-800 border-0">{pet.idade}</Badge>
+                      {pet.size && <Badge className={`${getPorteColor(pet.size)} border-0`}>{pet.size}</Badge>}
+                      {pet.gender && <Badge className={`${getSexoColor(pet.gender)} border-0`}>{pet.gender}</Badge>}
+                      {pet.age && <Badge className="bg-purple-100 text-purple-800 border-0">{pet.age} anos</Badge>}
                     </div>
                   </div>
 
@@ -181,91 +130,97 @@ export default function PetProfilePage() {
                     <div className="space-y-4">
                       <div>
                         <label className="text-sm font-medium text-gray-500 uppercase tracking-wide">Raça</label>
-                        <p className="text-lg font-semibold text-gray-900">{pet.raca}</p>
+                        <p className="text-lg font-semibold text-gray-900">{pet.breed || "Não informado"}</p>
                       </div>
-                      <div>
-                        <label className="text-sm font-medium text-gray-500 uppercase tracking-wide">
-                          Data de Nascimento
-                        </label>
-                        <p className="text-lg font-semibold text-gray-900 flex items-center gap-2">
-                          <Calendar className="w-4 h-4 text-gray-400" />
-                          {new Date(pet.nascimento).toLocaleDateString("pt-BR")}
-                        </p>
-                      </div>
+                      {pet.birthDate && (
+                        <div>
+                          <label className="text-sm font-medium text-gray-500 uppercase tracking-wide">
+                            Data de Nascimento
+                          </label>
+                          <p className="text-lg font-semibold text-gray-900 flex items-center gap-2">
+                            <Calendar className="w-4 h-4 text-gray-400" />
+                            {new Date(pet.birthDate).toLocaleDateString("pt-BR")}
+                          </p>
+                        </div>
+                      )}
                     </div>
 
                     <div className="space-y-4">
-                      <div>
-                        <label className="text-sm font-medium text-gray-500 uppercase tracking-wide">
-                          Última Consulta
-                        </label>
-                        <p className="text-lg font-semibold text-gray-900">
-                          {new Date(pet.ultimaConsulta).toLocaleDateString("pt-BR")}
-                        </p>
-                      </div>
-                      <div>
-                        <label className="text-sm font-medium text-gray-500 uppercase tracking-wide">
-                          Próxima Vacina
-                        </label>
-                        <p className="text-lg font-semibold text-gray-900">
-                          {new Date(pet.proximaVacina).toLocaleDateString("pt-BR")}
-                        </p>
-                      </div>
+                      {pet.species && (
+                        <div>
+                          <label className="text-sm font-medium text-gray-500 uppercase tracking-wide">Espécie</label>
+                          <p className="text-lg font-semibold text-gray-900">{pet.species}</p>
+                        </div>
+                      )}
+                      {pet.weight && (
+                        <div>
+                          <label className="text-sm font-medium text-gray-500 uppercase tracking-wide">Peso</label>
+                          <p className="text-lg font-semibold text-gray-900">{pet.weight} kg</p>
+                        </div>
+                      )}
                     </div>
                   </div>
 
                   {/* Observações */}
-                  <div>
-                    <label className="text-sm font-medium text-gray-500 uppercase tracking-wide mb-2 block">
-                      Observações
-                    </label>
-                    <p className="text-gray-700 leading-relaxed bg-gray-50 p-4 rounded-xl">{pet.observacoes}</p>
-                  </div>
+                  {pet.observations && (
+                    <div>
+                      <label className="text-sm font-medium text-gray-500 uppercase tracking-wide mb-2 block">
+                        Observações
+                      </label>
+                      <p className="text-gray-700 leading-relaxed bg-gray-50 p-4 rounded-xl">{pet.observations}</p>
+                    </div>
+                  )}
                 </div>
               </div>
             </CardContent>
           </Card>
 
-          {/* Informações do Dono */}
-          <Card className="border-0 shadow-xl bg-white/80 backdrop-blur-sm rounded-2xl mb-8">
-            <CardHeader>
-              <CardTitle className="text-xl font-bold text-gray-900 flex items-center gap-2">
-                <Heart className="w-5 h-5 text-red-500" />
-                Informações do Tutor
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 bg-blue-100 rounded-xl flex items-center justify-center">
-                    <Heart className="w-5 h-5 text-blue-600" />
+          {/* Informações do Tutor */}
+          {pet.owner && (
+            <Card className="border-0 shadow-xl bg-white/80 backdrop-blur-sm rounded-2xl mb-8">
+              <CardHeader>
+                <CardTitle className="text-xl font-bold text-gray-900 flex items-center gap-2">
+                  <Heart className="w-5 h-5 text-red-500" />
+                  Informações do Tutor
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 bg-blue-100 rounded-xl flex items-center justify-center">
+                      <Heart className="w-5 h-5 text-blue-600" />
+                    </div>
+                    <div>
+                      <p className="text-sm text-gray-500">Nome</p>
+                      <p className="font-semibold text-gray-900">{pet.owner.name}</p>
+                    </div>
                   </div>
-                  <div>
-                    <p className="text-sm text-gray-500">Nome</p>
-                    <p className="font-semibold text-gray-900">{pet.dono.nome}</p>
-                  </div>
+                  {pet.owner.phone && (
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 bg-green-100 rounded-xl flex items-center justify-center">
+                        <Phone className="w-5 h-5 text-green-600" />
+                      </div>
+                      <div>
+                        <p className="text-sm text-gray-500">Telefone</p>
+                        <p className="font-semibold text-gray-900">{pet.owner.phone}</p>
+                      </div>
+                    </div>
+                  )}
+                  {pet.owner.email && (
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 bg-purple-100 rounded-xl flex items-center justify-center">
+                        <Mail className="w-5 h-5 text-purple-600" />
+                      </div>
+                      <div>
+                        <p className="text-sm text-gray-500">E-mail</p>
+                        <p className="font-semibold text-gray-900">{pet.owner.email}</p>
+                      </div>
+                    </div>
+                  )}
                 </div>
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 bg-green-100 rounded-xl flex items-center justify-center">
-                    <Phone className="w-5 h-5 text-green-600" />
-                  </div>
-                  <div>
-                    <p className="text-sm text-gray-500">Telefone</p>
-                    <p className="font-semibold text-gray-900">{pet.dono.telefone}</p>
-                  </div>
-                </div>
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 bg-purple-100 rounded-xl flex items-center justify-center">
-                    <Mail className="w-5 h-5 text-purple-600" />
-                  </div>
-                  <div>
-                    <p className="text-sm text-gray-500">E-mail</p>
-                    <p className="font-semibold text-gray-900">{pet.dono.email}</p>
-                  </div>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+              </CardContent>
+            </Card>
+          )}
 
           {/* Botões de Ação */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -274,7 +229,7 @@ export default function PetProfilePage() {
               onClick={() => router.push(`/pet/${petId}/vacinas`)}
             >
               <Syringe className="h-8 w-8 group-hover:scale-110 transition-transform" />
-              <span className="font-semibold text-lg">Vacinas Tomadas</span>
+              <span className="font-semibold text-lg">Vacinas</span>
             </Button>
             <Button
               variant="outline"

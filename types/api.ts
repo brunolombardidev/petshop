@@ -1,118 +1,94 @@
-// Tipos base da API
-export interface ApiResponse<T> {
-  data: T
-  message?: string
+// Tipos base para API
+export interface ApiResponse<T = any> {
   success: boolean
+  data?: T
+  message?: string
+  errors?: Record<string, string[]>
+  meta?: {
+    page?: number
+    limit?: number
+    total?: number
+    totalPages?: number
+  }
 }
 
-export interface PaginatedResponse<T> {
-  data: T[]
-  total: number
-  page: number
-  limit: number
-  totalPages: number
+export interface PaginatedResponse<T> extends ApiResponse<T[]> {
+  meta: {
+    page: number
+    limit: number
+    total: number
+    totalPages: number
+  }
 }
 
 // Tipos de usuário
-export type UserType = "cliente" | "petshop" | "fornecedor" | "empresa" | "administrador"
-
-// Auth types
-export interface LoginRequest {
-  email: string
-  password: string
-  userType: UserType
-}
-
-export interface LoginResponse {
-  token: string
-  refreshToken: string
-  user: User
-}
-
-export interface RegisterRequest {
-  email: string
-  password: string
-  userType: UserType
-  name: string
-  phone?: string
-  document?: string // CPF ou CNPJ
-}
-
-// User types
 export interface User {
   id: string
-  email: string
   name: string
-  userType: UserType
+  email: string
+  userType: "cliente" | "petshop" | "fornecedor" | "empresa" | "administrador"
   phone?: string
-  document?: string
   avatar?: string
   isActive: boolean
   createdAt: string
   updatedAt: string
-  profile?: ClientProfile | CompanyProfile | PetshopProfile | SupplierProfile
+  profile?: UserProfile
 }
 
-export interface ClientProfile {
+export interface UserProfile {
   id: string
   userId: string
-  cpf: string
-  birthDate?: string
+  document?: string
   address?: Address
-}
-
-export interface CompanyProfile {
-  id: string
-  userId: string
-  cnpj: string
-  companyName: string
-  fantasyName?: string
-  area?: string
-  description?: string
-  responsible?: string
-  socialMedia?: string
-  logo?: string
-  address?: Address
-}
-
-export interface PetshopProfile {
-  id: string
-  userId: string
-  cnpj: string
-  companyName: string
-  fantasyName?: string
-  description?: string
-  services?: string[]
-  workingHours?: string
-  logo?: string
-  address?: Address
-}
-
-export interface SupplierProfile {
-  id: string
-  userId: string
-  cnpj: string
-  companyName: string
-  fantasyName?: string
-  description?: string
-  categories?: string[]
-  logo?: string
-  address?: Address
+  preferences?: UserPreferences
 }
 
 export interface Address {
   id: string
-  cep: string
   street: string
   number: string
   complement?: string
   neighborhood: string
   city: string
   state: string
+  zipCode: string
   country: string
 }
 
-// Pet types
+export interface UserPreferences {
+  notifications: boolean
+  emailMarketing: boolean
+  theme: "light" | "dark" | "system"
+  language: string
+}
+
+// Tipos de autenticação
+export interface LoginRequest {
+  email: string
+  password: string
+  userType: string
+}
+
+export interface RegisterRequest {
+  name: string
+  email: string
+  password: string
+  confirmPassword: string
+  userType: "cliente" | "petshop" | "fornecedor" | "empresa"
+  phone?: string
+  document?: string
+  acceptTerms: boolean
+}
+
+export interface LoginResponse {
+  user: User
+  access_token: string
+  refresh_token: string
+  expires_in: number
+  token_type: string
+}
+
+// Tipos de Pet
 export interface Pet {
   id: string
   name: string
@@ -125,116 +101,314 @@ export interface Pet {
   isNeutered: boolean
   ownerId: string
   avatar?: string
-  medicalInfo?: PetMedicalInfo
+  isActive: boolean
   createdAt: string
   updatedAt: string
+  medicalHistory?: MedicalRecord[]
+  vaccinations?: Vaccination[]
 }
 
-export interface PetMedicalInfo {
+export interface MedicalRecord {
   id: string
   petId: string
-  allergies?: string[]
-  medications?: string[]
-  conditions?: string[]
-  veterinarian?: string
-  lastCheckup?: string
-  vaccinations?: Vaccination[]
+  veterinarianId?: string
+  date: string
+  type: "consultation" | "surgery" | "exam" | "treatment"
+  description: string
+  diagnosis?: string
+  treatment?: string
+  medications?: string
+  notes?: string
+  attachments?: string[]
+  createdAt: string
+  updatedAt: string
 }
 
 export interface Vaccination {
   id: string
-  name: string
-  date: string
-  nextDue?: string
-  veterinarian?: string
-  batch?: string
-}
-
-// Product types
-export interface Product {
-  id: string
-  name: string
-  description?: string
-  category: string
-  subcategory?: string
-  brand?: string
-  price: number
-  stock: number
-  images?: string[]
-  specifications?: Record<string, any>
-  supplierId?: string
-  petshopId?: string
-  isActive: boolean
+  petId: string
+  veterinarianId?: string
+  vaccineName: string
+  manufacturer?: string
+  batchNumber?: string
+  applicationDate: string
+  nextDueDate?: string
+  notes?: string
   createdAt: string
   updatedAt: string
 }
 
-// Service types
+// Tipos de Serviço
 export interface Service {
   id: string
   name: string
   description?: string
   category: string
   price: number
-  duration: number // em minutos
-  petshopId: string
+  duration?: number
+  providerId: string
   isActive: boolean
   createdAt: string
   updatedAt: string
 }
 
-// Appointment types
-export interface Appointment {
-  id: string
-  petId: string
-  serviceId: string
-  petshopId: string
-  clientId: string
-  scheduledDate: string
-  status: "scheduled" | "confirmed" | "in_progress" | "completed" | "cancelled"
-  notes?: string
-  price?: number
-  createdAt: string
-  updatedAt: string
-  pet?: Pet
-  service?: Service
-  petshop?: User
-}
-
-// Review types
-export interface Review {
-  id: string
-  rating: number
-  comment?: string
-  clientId: string
-  targetId: string // petshop, supplier, or service ID
-  targetType: "petshop" | "supplier" | "service"
-  appointmentId?: string
-  createdAt: string
-  updatedAt: string
-  client?: User
-}
-
-// Notification types
-export interface Notification {
+export interface ServiceProvider {
   id: string
   userId: string
+  user?: User
+  businessName: string
+  description?: string
+  address?: Address
+  phone?: string
+  email?: string
+  website?: string
+  socialMedia?: Record<string, string>
+  operatingHours?: OperatingHours[]
+  services?: Service[]
+  rating?: number
+  reviewCount?: number
+  isVerified: boolean
+  isActive: boolean
+  createdAt: string
+  updatedAt: string
+}
+
+export interface OperatingHours {
+  dayOfWeek: number // 0-6 (domingo-sábado)
+  openTime: string
+  closeTime: string
+  isOpen: boolean
+}
+
+// Tipos de Contrato
+export interface ServiceContract {
+  id: string
+  clientId: string
+  client?: User
+  providerId: string
+  provider?: ServiceProvider
+  serviceId: string
+  service?: Service
+  petId: string
+  pet?: Pet
+  status: "pendente" | "confirmado" | "em_andamento" | "concluido" | "cancelado" | "rejeitado"
+  scheduledDate?: string
+  completedDate?: string
+  price: number
+  observations?: string
+  clientNotes?: string
+  providerNotes?: string
+  rating?: number
+  review?: string
+  createdAt: string
+  updatedAt: string
+}
+
+// Tipos de Assinatura
+export interface Plan {
+  id: string
+  name: string
+  description: string
+  type: "basico" | "premium" | "enterprise" | "personalizado"
+  price: number
+  billingCycle: "mensal" | "trimestral" | "semestral" | "anual"
+  features: PlanFeature[]
+  maxUsers?: number
+  maxPets?: number
+  maxContracts?: number
+  isActive: boolean
+  isPopular?: boolean
+  createdAt: string
+  updatedAt: string
+}
+
+export interface PlanFeature {
+  id: string
+  name: string
+  description?: string
+  isIncluded: boolean
+  limit?: number
+}
+
+export interface Subscription {
+  id: string
+  userId: string
+  planId: string
+  status: "active" | "inactive" | "cancelled" | "expired"
+  startDate: string
+  endDate: string
+  autoRenew: boolean
+  paymentMethod?: string
+  createdAt: string
+  updatedAt: string
+  plan?: SubscriptionPlan
+}
+
+export interface SubscriptionPlan {
+  id: string
+  name: string
+  description?: string
+  price: number
+  duration: number // em dias
+  features: string[]
+  isActive: boolean
+  createdAt: string
+  updatedAt: string
+}
+
+// Tipos de Campanha
+export interface Campaign {
+  id: string
+  title: string
+  description?: string
+  type: "discount" | "promotion" | "announcement"
+  startDate: string
+  endDate: string
+  isActive: boolean
+  targetAudience?: string[]
+  createdBy: string
+  createdAt: string
+  updatedAt: string
+}
+
+// Tipos de Feedback
+export interface Feedback {
+  id: string
+  title: string
+  message: string
+  rating?: number
+  type: "suggestion" | "complaint" | "compliment" | "bug_report"
+  status: "pending" | "in_progress" | "resolved" | "closed"
+  userId: string
+  createdAt: string
+  updatedAt: string
+  response?: string
+  respondedAt?: string
+  respondedBy?: string
+}
+
+// Tipos de Notificação
+export interface Notification {
+  id: string
   title: string
   message: string
   type: "info" | "warning" | "success" | "error"
   isRead: boolean
-  data?: Record<string, any>
+  userId: string
   createdAt: string
+  updatedAt: string
+  actionUrl?: string
 }
 
-// Report types
-export interface ReportData {
-  period: string
-  totalRevenue?: number
-  totalAppointments?: number
-  totalClients?: number
-  totalProducts?: number
-  growthRate?: number
-  topServices?: Array<{ name: string; count: number }>
-  topProducts?: Array<{ name: string; sales: number }>
+// Tipos de Estatística
+export interface DashboardStats {
+  totalUsers: number
+  totalPets: number
+  totalContracts: number
+  totalRevenue: number
+  activeSubscriptions: number
+  pendingContracts: number
+  completedContracts: number
+  canceledContracts: number
+  averageRating: number
+  monthlyGrowth: number
+}
+
+export interface UserStats {
+  totalPets: number
+  totalContracts: number
+  completedContracts: number
+  pendingContracts: number
+  totalSpent: number
+  averageRating: number
+  joinDate: string
+  lastActivity: string
+}
+
+// Tipos de busca e filtros
+export interface SearchFilters {
+  query?: string
+  category?: string
+  location?: string
+  priceMin?: number
+  priceMax?: number
+  rating?: number
+  isVerified?: boolean
+  sortBy?: "relevance" | "price" | "rating" | "distance" | "newest"
+  sortOrder?: "asc" | "desc"
+}
+
+export interface SearchResult<T> {
+  items: T[]
+  total: number
+  page: number
+  limit: number
+  hasNext: boolean
+  hasPrev: boolean
+  filters: SearchFilters
+}
+
+// Tipos de configuração
+export interface UserSettings {
+  id: string
+  userId: string
+  notifications: NotificationSettings
+  privacy: PrivacySettings
+  preferences: UserPreferences
+  createdAt: string
+  updatedAt: string
+}
+
+export interface NotificationSettings {
+  email: boolean
+  push: boolean
+  sms: boolean
+  marketing: boolean
+  contractUpdates: boolean
+  paymentReminders: boolean
+  systemUpdates: boolean
+}
+
+export interface PrivacySettings {
+  profileVisibility: "public" | "private" | "contacts"
+  showEmail: boolean
+  showPhone: boolean
+  allowMessages: boolean
+  allowReviews: boolean
+}
+
+// Tipos de erro
+export interface ApiError {
+  code: string
+  message: string
+  details?: Record<string, any>
+  timestamp: string
+}
+
+// Tipos de validação
+export interface ValidationError {
+  field: string
+  message: string
+  code: string
+}
+
+export interface FormErrors {
+  [key: string]: string | string[]
+}
+
+// Tipos de Produto
+export interface Product {
+  id: string
+  name: string
+  description?: string
+  category: string
+  brand?: string
+  price: number
+  stock: number
+  sku?: string
+  images?: string[]
+  isActive: boolean
+  sellerId: string
+  createdAt: string
+  updatedAt: string
 }

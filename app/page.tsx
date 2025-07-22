@@ -3,19 +3,21 @@
 import type React from "react"
 
 import { useState } from "react"
-import { useRouter } from "next/navigation"
+import { useAuth } from "@/hooks/use-auth"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Eye, EyeOff, Heart, Shield, Users, Mail, Lock, User, Building } from "lucide-react"
+import { Checkbox } from "@/components/ui/checkbox"
 import Image from "next/image"
+import Link from "next/link"
 
 export default function LoginPage() {
-  const router = useRouter()
+  const { login, loading } = useAuth()
   const [showPassword, setShowPassword] = useState(false)
-  const [isLoading, setIsLoading] = useState(false)
+  const [rememberMe, setRememberMe] = useState(false)
   const [formData, setFormData] = useState({
     email: "",
     password: "",
@@ -31,33 +33,20 @@ export default function LoginPage() {
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault()
-    setIsLoading(true)
 
-    // Simular login
-    await new Promise((resolve) => setTimeout(resolve, 1500))
-
-    // Redirecionar baseado no tipo de usuário
-    switch (formData.userType) {
-      case "cliente":
-        router.push("/dashboard/cliente")
-        break
-      case "petshop":
-        router.push("/dashboard/petshop")
-        break
-      case "fornecedor":
-        router.push("/dashboard/fornecedor")
-        break
-      case "empresa":
-        router.push("/dashboard/empresa")
-        break
-      case "administrador":
-        router.push("/dashboard/administrador")
-        break
-      default:
-        router.push("/dashboard")
+    if (!formData.email || !formData.password || !formData.userType) {
+      return
     }
 
-    setIsLoading(false)
+    try {
+      await login({
+        email: formData.email,
+        password: formData.password,
+        userType: formData.userType as any,
+      })
+    } catch (error) {
+      // Error já tratado no hook
+    }
   }
 
   const isFormValid = formData.email && formData.password && formData.userType
@@ -172,32 +161,23 @@ export default function LoginPage() {
               {/* Lembrar e Recuperar */}
               <div className="flex items-center justify-between">
                 <div className="flex items-center space-x-2">
-                  <input
-                    id="remember"
-                    type="checkbox"
-                    className="rounded border-gray-300 text-[#30B2B0] focus:ring-[#30B2B0]/20"
-                  />
+                  <Checkbox id="remember" checked={rememberMe} onCheckedChange={setRememberMe} />
                   <Label htmlFor="remember" className="text-sm text-gray-600">
                     Lembrar de mim
                   </Label>
                 </div>
-                <Button
-                  type="button"
-                  variant="link"
-                  onClick={() => router.push("/recuperar")}
-                  className="text-[#30B2B0] hover:text-[#145D5F] p-0 h-auto"
-                >
+                <Link href="/recuperar" className="text-sm text-[#30B2B0] hover:text-[#145D5F] hover:underline">
                   Esqueceu a senha?
-                </Button>
+                </Link>
               </div>
 
               {/* Botão de Login */}
               <Button
                 type="submit"
-                disabled={!isFormValid || isLoading}
+                disabled={!isFormValid || loading}
                 className="w-full h-12 bg-gradient-to-r from-bpet-primary to-bpet-secondary hover:from-bpet-secondary hover:to-bpet-primary text-white rounded-xl font-medium shadow-lg hover:shadow-xl transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                {isLoading ? (
+                {loading ? (
                   <div className="flex items-center gap-2">
                     <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
                     Entrando...
@@ -219,14 +199,15 @@ export default function LoginPage() {
             </div>
 
             {/* Botão de Cadastro */}
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => router.push("/cadastro")}
-              className="w-full h-12 border-2 border-gray-200 text-gray-700 hover:bg-gray-50 rounded-xl font-medium"
-            >
-              Criar nova conta
-            </Button>
+            <Link href="/cadastro">
+              <Button
+                type="button"
+                variant="outline"
+                className="w-full h-12 border-2 border-gray-200 text-gray-700 hover:bg-gray-50 rounded-xl font-medium bg-transparent"
+              >
+                Criar nova conta
+              </Button>
+            </Link>
           </CardContent>
         </Card>
 

@@ -1,210 +1,234 @@
-# B-Pet - Plataforma Completa para o Universo Pet 🐾
+# B-Pet - Sistema de Gestão para Pet Shops
 
-Uma plataforma moderna e completa que conecta tutores de pets, petshops, fornecedores e empresas em um ecossistema integrado para o cuidado e bem-estar animal.
+Sistema completo de gestão para pet shops, clientes, fornecedores e empresas do setor pet.
 
-## 📋 Sobre o Projeto
+## 🚀 Tecnologias
 
-O **B-Pet** é uma aplicação web desenvolvida para revolucionar a forma como pessoas e empresas interagem no universo pet. A plataforma oferece soluções personalizadas para diferentes tipos de usuários, desde tutores que querem cuidar melhor de seus pets até empresas que desejam oferecer benefícios pet para seus colaboradores.
+- **Frontend**: Next.js 14, React 18, TypeScript
+- **Styling**: Tailwind CSS, shadcn/ui
+- **Estado**: React Context API
+- **Autenticação**: JWT com refresh tokens
+- **API**: REST API integrada
+- **Build**: Turbopack (desenvolvimento)
 
-### 👥 Tipos de Usuário
+## 📋 Pré-requisitos
 
-- **🏠 Cliente**: Tutores de pets que buscam serviços e produtos
-- **🏪 Petshop**: Estabelecimentos que oferecem produtos e serviços
-- **📦 Fornecedor**: Empresas que fornecem produtos para petshops
-- **🏢 Empresa**: Organizações que oferecem benefícios pet aos colaboradores
-- **⚙️ Administrador**: Gestores da plataforma
-
-## 🚀 Tecnologias e Dependências
-
-### Core Framework
-- **Next.js**: `14.2.15` - Framework React com App Router
-- **React**: `^18.3.1` - Biblioteca para interfaces de usuário
-- **React DOM**: `^18.3.1` - Renderização React para web
-- **TypeScript**: `^5.6.3` - Linguagem com tipagem estática
-
-### Estilização e UI
-- **Tailwind CSS**: `^3.4.1` - Framework CSS utilitário
-- **PostCSS**: `^8.4.49` - Processador CSS
-- **Autoprefixer**: `^10.4.20` - Prefixos CSS automáticos
-- **clsx**: `^2.1.1` - Utilitário para classes condicionais
-- **tailwind-merge**: `^2.5.4` - Merge de classes Tailwind
-- **tailwindcss-animate**: `^1.0.7` - Animações Tailwind
-
-### Componentes UI (Radix UI)
-- **@radix-ui/react-accordion**: `^1.2.1`
-- **@radix-ui/react-alert-dialog**: `^1.1.2`
-- **@radix-ui/react-aspect-ratio**: `^1.1.0`
-- **@radix-ui/react-avatar**: `^1.1.1`
-- **@radix-ui/react-checkbox**: `^1.1.2`
-- **@radix-ui/react-collapsible**: `^1.1.1`
-- **@radix-ui/react-context-menu**: `^2.2.2`
-- **@radix-ui/react-dialog**: `^1.1.2`
-- **@radix-ui/react-dropdown-menu**: `^2.1.2`
-- **@radix-ui/react-hover-card**: `^1.1.2`
-- **@radix-ui/react-label**: `^2.1.0`
-- **@radix-ui/react-menubar**: `^1.1.2`
-- **@radix-ui/react-navigation-menu**: `^1.2.1`
-- **@radix-ui/react-popover**: `^1.1.2`
-- **@radix-ui/react-progress**: `^1.1.0`
-- **@radix-ui/react-radio-group**: `^1.2.1`
-- **@radix-ui/react-scroll-area**: `^1.2.0`
-- **@radix-ui/react-select**: `^2.1.2`
-- **@radix-ui/react-separator**: `^1.1.0`
-- **@radix-ui/react-slider**: `^1.2.1`
-- **@radix-ui/react-slot**: `^1.1.0`
-- **@radix-ui/react-switch**: `^1.1.1`
-- **@radix-ui/react-tabs**: `^1.1.1`
-- **@radix-ui/react-toast**: `^1.2.2`
-- **@radix-ui/react-toggle**: `^1.1.0`
-- **@radix-ui/react-toggle-group**: `^1.1.0`
-- **@radix-ui/react-tooltip**: `^1.1.3`
-
-### Ícones e Gráficos
-- **lucide-react**: `^0.454.0` - Ícones SVG otimizados
-- **recharts**: `^2.13.3` - Biblioteca de gráficos React
-
-### Utilitários e Validação
-- **class-variance-authority**: `^0.7.0` - Variantes de componentes
-- **cmdk**: `^1.0.0` - Command palette
-- **date-fns**: `^4.1.0` - Manipulação de datas
-- **embla-carousel-react**: `^8.3.0` - Carousel/slider
-- **input-otp**: `^1.4.1` - Input para códigos OTP
-- **react-day-picker**: `8.10.1` - Seletor de datas
-- **react-hook-form**: `^7.53.2` - Gerenciamento de formulários
-- **react-resizable-panels**: `^2.1.4` - Painéis redimensionáveis
-- **sonner**: `^1.7.0` - Notificações toast
-- **vaul**: `^1.0.0` - Drawer component
-
-### Ferramentas de Desenvolvimento
-- **ESLint**: `^8.57.1` - Linter para JavaScript/TypeScript
-- **eslint-config-next**: `14.2.15` - Configuração ESLint para Next.js
-- **@types/node**: `^20.17.6` - Tipos TypeScript para Node.js
-- **@types/react**: `^18.3.12` - Tipos TypeScript para React
-- **@types/react-dom**: `^18.3.1` - Tipos TypeScript para React DOM
-
-### Runtime
-- **Node.js**: `20.0.0+` - Runtime JavaScript
-
-## 📦 Instalação
-
-### Pré-requisitos
-- Node.js 20.0.0 ou superior
-- npm 10.0.0+ ou yarn
+- Node.js 18.17+ ou superior
+- npm 9.0+ ou superior
 - Git
 
-### Passos para instalação
+## 🔧 Instalação
 
 1. **Clone o repositório**
 \`\`\`bash
-git clone https://github.com/seu-usuario/b-pet.git
-cd b-pet
+git clone <repository-url>
+cd petshop-app
 \`\`\`
 
 2. **Instale as dependências**
 \`\`\`bash
 npm install
-# ou
-yarn install
 \`\`\`
 
-3. **Execute o projeto em desenvolvimento**
+3. **Configure as variáveis de ambiente**
+\`\`\`bash
+cp .env.example .env.local
+\`\`\`
+
+Edite o arquivo `.env.local` com suas configurações:
+\`\`\`env
+NEXT_PUBLIC_API_BASE_URL=http://bpetback.atrativozap.com.br/api
+NEXT_PUBLIC_APP_URL=http://localhost:3000
+NODE_ENV=development
+\`\`\`
+
+4. **Inicie o servidor de desenvolvimento**
 \`\`\`bash
 npm run dev
-# ou
-yarn dev
 \`\`\`
 
-4. **Acesse a aplicação**
-\`\`\`
-http://localhost:3000
-\`\`\`
+O aplicativo estará disponível em `http://localhost:3000`
 
-## 🛠️ Scripts Disponíveis
+## 🏗️ Scripts Disponíveis
 
 \`\`\`bash
 # Desenvolvimento
 npm run dev          # Inicia o servidor de desenvolvimento
-
-# Build
-npm run build        # Gera build de produção
+npm run build        # Cria build de produção
 npm run start        # Inicia servidor de produção
-
-# Qualidade de Código
 npm run lint         # Executa ESLint
+npm run type-check   # Verifica tipos TypeScript
 \`\`\`
 
-## 🏗️ Estrutura do Projeto
+## 📁 Estrutura do Projeto
 
 \`\`\`
-b-pet/
-├── 📁 app/                    # App Router do Next.js
-│   ├── 📁 dashboard/         # Dashboards por tipo de usuário
-│   ├── 📁 perfil/           # Páginas de perfil unificado
-│   ├── 📁 meus-pets/        # Gestão de pets do cliente
-│   ├── 📁 cartao-pet/       # Sistema de cartão de descontos
-│   ├── 📁 campanhas/        # Campanhas de doação
-│   ├── 📁 indicacoes/       # Sistema de indicações
-│   ├── 📁 feedback/         # Sistema de feedback
-│   ├── 📁 assinatura/       # Gestão de assinaturas
-│   ├── 📁 configuracoes/    # Configurações do usuário
-│   └── 📁 gestao-produtos/  # Gestão de produtos
-├── 📁 components/            # Componentes reutilizáveis
-│   └── 📁 ui/               # Componentes shadcn/ui
-├── 📁 hooks/                # Custom hooks
-├── 📁 lib/                  # Utilitários e configurações
-├── 📁 services/             # Serviços de API
-├── 📁 types/                # Definições de tipos TypeScript
-└── 📁 public/               # Arquivos estáticos
+petshop-app/
+├── app/                    # App Router (Next.js 14)
+│   ├── dashboard/         # Dashboards por tipo de usuário
+│   ├── campanhas/         # Gestão de campanhas
+│   ├── feedback/          # Sistema de feedback
+│   ├── servicos/          # Contratação de serviços
+│   ├── assinatura/        # Gestão de assinaturas
+│   └── ...
+├── components/            # Componentes reutilizáveis
+│   ├── ui/               # Componentes base (shadcn/ui)
+│   └── ...
+├── hooks/                # Custom hooks
+├── lib/                  # Utilitários e configurações
+├── services/             # Serviços de API
+├── types/                # Definições de tipos TypeScript
+└── public/               # Arquivos estáticos
 \`\`\`
 
-## ✨ Funcionalidades Principais
+## 👥 Tipos de Usuário
 
-### 🎯 Dashboards Personalizados
-- Interface específica para cada tipo de usuário
-- Métricas e KPIs relevantes
-- Navegação intuitiva e responsiva
+O sistema suporta diferentes tipos de usuário:
 
-### 🐕 Gestão de Pets
-- Cadastro completo de pets
-- Histórico médico e vacinas
-- Perfil detalhado com fotos
+- **Cliente**: Contrata serviços, gerencia pets
+- **Pet Shop**: Oferece serviços, gerencia clientes
+- **Fornecedor**: Fornece produtos/serviços para pet shops
+- **Empresa**: Gestão empresarial
+- **Administrador**: Gestão completa do sistema
 
-### 💳 Sistema de Cartão Pet
-- Cartão de descontos exclusivo
-- Validação de clientes e fornecedores
-- Benefícios personalizados
+## 🔐 Autenticação
 
-### ❤️ Campanhas de Doação
+- Sistema de login com múltiplos tipos de usuário
+- JWT com refresh tokens automático
+- Redirecionamento baseado no perfil do usuário
+- Recuperação de senha via email
+
+## 💳 Módulos Principais
+
+### 1. **Sistema de Assinaturas**
+- Gestão de planos e assinaturas
+- Faturas e pagamentos
+- Estatísticas para administradores
+
+### 2. **Contratação de Serviços**
+- Busca avançada de provedores
+- Validação via QR Code
+- Sistema de avaliações
+- Gestão de contratos
+
+### 3. **Gestão de Campanhas**
 - Criação e gestão de campanhas
-- Sistema de arrecadação
-- Transparência nos resultados
+- Segmentação de público
+- Relatórios de performance
 
-### 👥 Sistema de Indicações
-- Programa de referência
-- Comissões automáticas
-- Acompanhamento de status
+### 4. **Sistema de Feedback**
+- Coleta de feedback dos usuários
+- Análise de satisfação
+- Relatórios detalhados
 
-### 📱 Interface Responsiva
-- Design adaptável para todos os dispositivos
-- Experiência otimizada mobile-first
-- Componentes acessíveis
+## 🌐 API Integration
 
-## 🎨 Padrões de Design
+O sistema integra com a API REST em:
+\`\`\`
+http://bpetback.atrativozap.com.br/api
+\`\`\`
 
-### Cores Principais
-- **Laranja**: Cor principal da marca
-- **Gradientes**: Utilizados em cards e botões
-- **Neutros**: Tons de cinza para texto e backgrounds
+### Principais Endpoints:
+- `/auth/*` - Autenticação
+- `/users/*` - Gestão de usuários
+- `/assinaturas/*` - Assinaturas e planos
+- `/servicos/*` - Serviços e contratações
+- `/campanhas/*` - Campanhas de marketing
+- `/feedback/*` - Sistema de feedback
 
-### Componentes
-- **Cards**: Bordas arredondadas com sombras suaves
-- **Botões**: Gradientes com hover effects
-- **Ícones**: Lucide React para consistência visual
+## 🎨 Interface
 
-## 📄 Licença
+- Design responsivo para desktop e mobile
+- Tema claro/escuro
+- Componentes acessíveis (WCAG)
+- Animações suaves
+- Feedback visual em tempo real
 
-Este projeto está sob a licença MIT.
+## 🔧 Desenvolvimento
+
+### Adicionando Novos Componentes
+
+\`\`\`bash
+# Usando shadcn/ui CLI (se disponível)
+npx shadcn@latest add [component-name]
+
+# Ou crie manualmente em components/ui/
+\`\`\`
+
+### Estrutura de Hooks
+
+\`\`\`typescript
+// hooks/use-example.ts
+export function useExample() {
+  // Lógica do hook
+  return {
+    // Estado e funções
+  }
+}
+\`\`\`
+
+### Estrutura de Serviços
+
+\`\`\`typescript
+// services/example.service.ts
+export class ExampleService {
+  static async getData() {
+    // Chamadas para API
+  }
+}
+\`\`\`
+
+## 🚀 Deploy
+
+### Vercel (Recomendado)
+\`\`\`bash
+npm run build
+# Deploy automático via Git integration
+\`\`\`
+
+### Build Manual
+\`\`\`bash
+npm run build
+npm run start
+\`\`\`
+
+## 🐛 Troubleshooting
+
+### Problemas Comuns
+
+1. **Erro de variáveis de ambiente**
+   - Verifique se `.env.local` existe e está configurado
+
+2. **Erro de build TypeScript**
+   - Execute `npm run type-check` para ver erros específicos
+
+3. **Problemas de API**
+   - Verifique se a API está acessível
+   - Confirme as URLs no `.env.local`
+
+4. **Cache corrompido**
+   \`\`\`bash
+   rm -rf .next
+   npm run dev
+   \`\`\`
+
+## 📝 Licença
+
+Este projeto é propriedade da B-Pet e está sob licença proprietária.
+
+## 🤝 Contribuição
+
+Para contribuir com o projeto:
+
+1. Crie uma branch para sua feature
+2. Faça commit das mudanças
+3. Abra um Pull Request
+4. Aguarde review
+
+## 📞 Suporte
+
+Para suporte técnico, entre em contato com a equipe de desenvolvimento.
 
 ---
 
-Desenvolvido com ❤️ para o universo pet 🐾
+**B-Pet** - Conectando o mundo pet 🐾

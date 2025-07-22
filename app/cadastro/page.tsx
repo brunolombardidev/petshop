@@ -3,7 +3,7 @@
 import type React from "react"
 
 import { useState } from "react"
-import { useRouter } from "next/navigation"
+import { useAuth } from "@/hooks/use-auth"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -12,12 +12,12 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Checkbox } from "@/components/ui/checkbox"
 import { Eye, EyeOff, ArrowLeft, Heart, Mail, Lock, User, Building, Phone } from "lucide-react"
 import Image from "next/image"
+import Link from "next/link"
 
 export default function CadastroPage() {
-  const router = useRouter()
+  const { register, loading } = useAuth()
   const [showPassword, setShowPassword] = useState(false)
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
-  const [isLoading, setIsLoading] = useState(false)
   const [acceptTerms, setAcceptTerms] = useState(false)
   const [formData, setFormData] = useState({
     name: "",
@@ -39,28 +39,28 @@ export default function CadastroPage() {
 
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault()
-    setIsLoading(true)
 
     // Validações
     if (formData.password !== formData.confirmPassword) {
-      alert("As senhas não coincidem!")
-      setIsLoading(false)
       return
     }
 
     if (!acceptTerms) {
-      alert("Você deve aceitar os termos de uso!")
-      setIsLoading(false)
       return
     }
 
-    // Simular cadastro
-    await new Promise((resolve) => setTimeout(resolve, 2000))
-
-    alert("Conta criada com sucesso! Faça login para continuar.")
-    router.push("/")
-
-    setIsLoading(false)
+    try {
+      await register({
+        name: formData.name,
+        email: formData.email,
+        phone: formData.phone,
+        password: formData.password,
+        userType: formData.userType as any,
+        document: formData.document,
+      })
+    } catch (error) {
+      // Error já tratado no hook
+    }
   }
 
   const isCompanyType = ["petshop", "fornecedor", "empresa"].includes(formData.userType)
@@ -73,16 +73,19 @@ export default function CadastroPage() {
     formData.userType &&
     formData.document &&
     (isCompanyType ? formData.companyName : true) &&
-    acceptTerms
+    acceptTerms &&
+    formData.password === formData.confirmPassword
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-[#D6DD83]/30 via-[#FFBDB6]/30 to-[#30B2B0]/30 flex items-center justify-center p-4">
       <div className="w-full max-w-md">
         {/* Header */}
         <div className="flex items-center gap-4 mb-6">
-          <Button variant="ghost" size="icon" onClick={() => router.back()} className="hover:bg-white/50 rounded-xl">
-            <ArrowLeft className="h-5 w-5 text-gray-700" />
-          </Button>
+          <Link href="/">
+            <Button variant="ghost" size="icon" className="hover:bg-white/50 rounded-xl">
+              <ArrowLeft className="h-5 w-5 text-gray-700" />
+            </Button>
+          </Link>
           <div className="flex items-center gap-3">
             <div className="w-12 h-12 bg-gradient-to-br from-bpet-primary to-bpet-secondary rounded-xl flex items-center justify-center shadow-lg">
               <Image src="/bpet-logo.png" alt="BPet Logo" width={24} height={24} className="rounded-lg" />
@@ -287,6 +290,9 @@ export default function CadastroPage() {
                     {showConfirmPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                   </button>
                 </div>
+                {formData.confirmPassword && formData.password !== formData.confirmPassword && (
+                  <p className="text-sm text-red-600">As senhas não coincidem</p>
+                )}
               </div>
 
               {/* Termos de Uso */}
@@ -294,31 +300,23 @@ export default function CadastroPage() {
                 <Checkbox id="terms" checked={acceptTerms} onCheckedChange={setAcceptTerms} />
                 <Label htmlFor="terms" className="text-sm text-gray-600">
                   Aceito os{" "}
-                  <Button
-                    type="button"
-                    variant="link"
-                    className="text-[#30B2B0] hover:text-[#145D5F] p-0 h-auto underline"
-                  >
+                  <Link href="/termos" className="text-[#30B2B0] hover:text-[#145D5F] underline">
                     termos de uso
-                  </Button>{" "}
+                  </Link>{" "}
                   e{" "}
-                  <Button
-                    type="button"
-                    variant="link"
-                    className="text-[#30B2B0] hover:text-[#145D5F] p-0 h-auto underline"
-                  >
+                  <Link href="/privacidade" className="text-[#30B2B0] hover:text-[#145D5F] underline">
                     política de privacidade
-                  </Button>
+                  </Link>
                 </Label>
               </div>
 
               {/* Botão de Cadastro */}
               <Button
                 type="submit"
-                disabled={!isFormValid || isLoading}
+                disabled={!isFormValid || loading}
                 className="w-full h-11 bg-gradient-to-r from-bpet-primary to-bpet-secondary hover:from-bpet-secondary hover:to-bpet-primary text-white rounded-xl font-medium shadow-lg hover:shadow-xl transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                {isLoading ? (
+                {loading ? (
                   <div className="flex items-center gap-2">
                     <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
                     Criando conta...
@@ -332,14 +330,9 @@ export default function CadastroPage() {
             {/* Já tem conta */}
             <div className="mt-6 text-center">
               <span className="text-sm text-gray-600">Já tem uma conta? </span>
-              <Button
-                type="button"
-                variant="link"
-                onClick={() => router.push("/")}
-                className="text-[#30B2B0] hover:text-[#145D5F] p-0 h-auto font-medium"
-              >
+              <Link href="/" className="text-sm text-[#30B2B0] hover:text-[#145D5F] font-medium hover:underline">
                 Fazer login
-              </Button>
+              </Link>
             </div>
           </CardContent>
         </Card>

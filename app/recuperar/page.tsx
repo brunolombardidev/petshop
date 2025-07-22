@@ -3,29 +3,37 @@
 import type React from "react"
 
 import { useState } from "react"
-import { useRouter } from "next/navigation"
+import { useAuth } from "@/hooks/use-auth"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { ArrowLeft, Mail, CheckCircle, AlertCircle } from "lucide-react"
 import Image from "next/image"
+import Link from "next/link"
 
 export default function RecuperarPage() {
-  const router = useRouter()
+  const { forgotPassword } = useAuth()
   const [email, setEmail] = useState("")
   const [isLoading, setIsLoading] = useState(false)
   const [isEmailSent, setIsEmailSent] = useState(false)
 
   const handleRecovery = async (e: React.FormEvent) => {
     e.preventDefault()
+
+    if (!email || !email.includes("@")) {
+      return
+    }
+
     setIsLoading(true)
-
-    // Simular envio de email
-    await new Promise((resolve) => setTimeout(resolve, 2000))
-
-    setIsEmailSent(true)
-    setIsLoading(false)
+    try {
+      await forgotPassword(email)
+      setIsEmailSent(true)
+    } catch (error) {
+      // Error já tratado no hook
+    } finally {
+      setIsLoading(false)
+    }
   }
 
   const isFormValid = email && email.includes("@")
@@ -44,12 +52,11 @@ export default function RecuperarPage() {
                 Enviamos um link de recuperação para <strong>{email}</strong>. Verifique sua caixa de entrada e spam.
               </p>
               <div className="space-y-3">
-                <Button
-                  onClick={() => router.push("/")}
-                  className="w-full h-12 bg-gradient-to-r from-bpet-primary to-bpet-secondary hover:from-bpet-secondary hover:to-bpet-primary text-white rounded-xl"
-                >
-                  Voltar ao Login
-                </Button>
+                <Link href="/">
+                  <Button className="w-full h-12 bg-gradient-to-r from-bpet-primary to-bpet-secondary hover:from-bpet-secondary hover:to-bpet-primary text-white rounded-xl">
+                    Voltar ao Login
+                  </Button>
+                </Link>
                 <Button
                   variant="outline"
                   onClick={() => setIsEmailSent(false)}
@@ -70,9 +77,11 @@ export default function RecuperarPage() {
       <div className="w-full max-w-md">
         {/* Header */}
         <div className="flex items-center gap-4 mb-6">
-          <Button variant="ghost" size="icon" onClick={() => router.back()} className="hover:bg-white/50 rounded-xl">
-            <ArrowLeft className="h-5 w-5 text-gray-700" />
-          </Button>
+          <Link href="/">
+            <Button variant="ghost" size="icon" className="hover:bg-white/50 rounded-xl">
+              <ArrowLeft className="h-5 w-5 text-gray-700" />
+            </Button>
+          </Link>
           <div className="flex items-center gap-3">
             <div className="w-12 h-12 bg-gradient-to-br from-bpet-primary to-bpet-secondary rounded-xl flex items-center justify-center shadow-lg">
               <Image src="/bpet-logo.png" alt="BPet Logo" width={24} height={24} className="rounded-lg" />
@@ -144,14 +153,9 @@ export default function RecuperarPage() {
             {/* Voltar ao Login */}
             <div className="mt-6 text-center">
               <span className="text-sm text-gray-600">Lembrou da senha? </span>
-              <Button
-                type="button"
-                variant="link"
-                onClick={() => router.push("/")}
-                className="text-[#30B2B0] hover:text-[#145D5F] p-0 h-auto font-medium"
-              >
+              <Link href="/" className="text-sm text-[#30B2B0] hover:text-[#145D5F] font-medium hover:underline">
                 Fazer login
-              </Button>
+              </Link>
             </div>
           </CardContent>
         </Card>

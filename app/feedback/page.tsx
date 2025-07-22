@@ -1,52 +1,80 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { ArrowLeft, MessageSquare, Search, Plus, Star, ThumbsUp, ThumbsDown } from "lucide-react"
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog"
+import { ArrowLeft, MessageSquare, Search, Plus, Star, ThumbsUp, ThumbsDown, Trash2 } from "lucide-react"
 import { FloatingButtons } from "@/components/floating-buttons"
-
-// Dados mockados dos feedbacks
-const feedbacksMockados = [
-  {
-    id: "1",
-    titulo: "Excelente atendimento na clínica",
-    mensagem: "Fui muito bem atendido na Clínica VetCare. A equipe é muito profissional e cuidadosa com os animais.",
-    categoria: "Atendimento",
-    avaliacao: 5,
-    data: "2024-01-15",
-    status: "Publicado",
-    empresa: "Clínica VetCare",
-  },
-  {
-    id: "2",
-    titulo: "Produto de qualidade",
-    mensagem: "A ração Premium que comprei é excelente. Meu cão adorou e melhorou muito a pelagem.",
-    categoria: "Produto",
-    avaliacao: 4,
-    data: "2024-01-10",
-    status: "Aguardando",
-    empresa: "Pet Food Premium",
-  },
-  {
-    id: "3",
-    titulo: "Demora na entrega",
-    mensagem: "O produto é bom, mas a entrega demorou mais que o prometido. Poderiam melhorar a logística.",
-    categoria: "Entrega",
-    avaliacao: 2,
-    data: "2024-01-08",
-    status: "Publicado",
-    empresa: "PetShop Online",
-  },
-]
+import { feedbackService, type Feedback } from "@/services/feedback.service"
+import { useAuthState } from "@/hooks/use-auth"
+import { toast } from "@/hooks/use-toast"
 
 export default function FeedbackPage() {
   const router = useRouter()
-  const [feedbacks, setFeedbacks] = useState(feedbacksMockados)
+  const { isAdmin } = useAuthState()
+  const [feedbacks, setFeedbacks] = useState<Feedback[]>([])
+  const [loading, setLoading] = useState(true)
   const [filtro, setFiltro] = useState("")
+  const [deletingId, setDeletingId] = useState<string | null>(null)
+
+  useEffect(() => {
+    loadFeedbacks()
+  }, [])
+
+  const loadFeedbacks = async () => {
+    try {
+      setLoading(true)
+      const response = await feedbackService.getFeedbacks({
+        page: 1,
+        limit: 100,
+      })
+      setFeedbacks(response.data)
+    } catch (error) {
+      console.error("Erro ao carregar feedbacks:", error)
+      toast({
+        title: "Erro",
+        description: "Erro ao carregar feedbacks. Tente novamente.",
+        variant: "destructive",
+      })
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const handleDelete = async (id: string) => {
+    try {
+      setDeletingId(id)
+      await feedbackService.deleteFeedback(id)
+      setFeedbacks(feedbacks.filter((feedback) => feedback.id !== id))
+      toast({
+        title: "Sucesso!",
+        description: "Feedback excluído com sucesso.",
+      })
+    } catch (error) {
+      console.error("Erro ao excluir feedback:", error)
+      toast({
+        title: "Erro",
+        description: "Erro ao excluir feedback. Tente novamente.",
+        variant: "destructive",
+      })
+    } finally {
+      setDeletingId(null)
+    }
+  }
 
   const feedbacksFiltrados = feedbacks.filter(
     (feedback) =>
@@ -57,11 +85,11 @@ export default function FeedbackPage() {
 
   const getStatusBadge = (status: string) => {
     switch (status) {
-      case "Publicado":
+      case "publicado":
         return <Badge className="bg-green-100 text-green-800 border-0">Publicado</Badge>
-      case "Aguardando":
-        return <Badge className="bg-yellow-100 text-yellow-800 border-0">Aguardando</Badge>
-      case "Rejeitado":
+      case "pendente":
+        return <Badge className="bg-yellow-100 text-yellow-800 border-0">Pendente</Badge>
+      case "rejeitado":
         return <Badge className="bg-red-100 text-red-800 border-0">Rejeitado</Badge>
       default:
         return <Badge className="bg-gray-100 text-gray-800 border-0">-</Badge>
@@ -70,13 +98,13 @@ export default function FeedbackPage() {
 
   const getCategoriaBadge = (categoria: string) => {
     switch (categoria) {
-      case "Atendimento":
+      case "atendimento":
         return <Badge className="bg-blue-100 text-blue-800 border-0">Atendimento</Badge>
-      case "Produto":
+      case "produto":
         return <Badge className="bg-purple-100 text-purple-800 border-0">Produto</Badge>
-      case "Entrega":
+      case "entrega":
         return <Badge className="bg-orange-100 text-orange-800 border-0">Entrega</Badge>
-      case "Preço":
+      case "preco":
         return <Badge className="bg-green-100 text-green-800 border-0">Preço</Badge>
       default:
         return <Badge className="bg-gray-100 text-gray-800 border-0">Geral</Badge>
@@ -87,6 +115,17 @@ export default function FeedbackPage() {
     return Array.from({ length: 5 }, (_, i) => (
       <Star key={i} className={`w-4 h-4 ${i < avaliacao ? "text-yellow-400 fill-current" : "text-gray-300"}`} />
     ))
+  }
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-[#D6DD83]/20 via-[#FFBDB6]/20 to-[#30B2B0]/20 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-bpet-primary mx-auto mb-4"></div>
+          <p className="text-gray-600">Carregando feedbacks...</p>
+        </div>
+      </div>
+    )
   }
 
   return (
@@ -162,7 +201,7 @@ export default function FeedbackPage() {
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-green-100 text-sm">Publicados</p>
-                    <p className="text-3xl font-bold">{feedbacks.filter((f) => f.status === "Publicado").length}</p>
+                    <p className="text-3xl font-bold">{feedbacks.filter((f) => f.status === "publicado").length}</p>
                   </div>
                   <ThumbsUp className="w-8 h-8 text-green-200" />
                 </div>
@@ -173,8 +212,8 @@ export default function FeedbackPage() {
               <CardContent className="p-6">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-yellow-100 text-sm">Aguardando</p>
-                    <p className="text-3xl font-bold">{feedbacks.filter((f) => f.status === "Aguardando").length}</p>
+                    <p className="text-yellow-100 text-sm">Pendentes</p>
+                    <p className="text-3xl font-bold">{feedbacks.filter((f) => f.status === "pendente").length}</p>
                   </div>
                   <ThumbsDown className="w-8 h-8 text-yellow-200" />
                 </div>
@@ -187,7 +226,9 @@ export default function FeedbackPage() {
                   <div>
                     <p className="text-purple-100 text-sm">Avaliação Média</p>
                     <p className="text-3xl font-bold">
-                      {(feedbacks.reduce((sum, f) => sum + f.avaliacao, 0) / feedbacks.length).toFixed(1)}
+                      {feedbacks.length > 0
+                        ? (feedbacks.reduce((sum, f) => sum + f.avaliacao, 0) / feedbacks.length).toFixed(1)
+                        : "0.0"}
                     </p>
                   </div>
                   <Star className="w-8 h-8 text-purple-200" />
@@ -234,18 +275,60 @@ export default function FeedbackPage() {
                                 {getStatusBadge(feedback.status)}
                               </div>
                             </div>
-                            <div className="text-right">
+                            <div className="text-right flex flex-col items-end gap-2">
                               <p className="text-sm text-gray-500 mb-2">
-                                {new Date(feedback.data).toLocaleDateString("pt-BR")}
+                                {new Date(feedback.createdAt).toLocaleDateString("pt-BR")}
                               </p>
-                              <div className="flex items-center gap-1">
+                              <div className="flex items-center gap-1 mb-2">
                                 {renderStars(feedback.avaliacao)}
                                 <span className="text-sm text-gray-600 ml-1">({feedback.avaliacao}/5)</span>
                               </div>
+                              {/* Botão Delete - Apenas para Admin */}
+                              {isAdmin && (
+                                <AlertDialog>
+                                  <AlertDialogTrigger asChild>
+                                    <Button variant="destructive" size="sm" disabled={deletingId === feedback.id}>
+                                      <Trash2 className="w-4 h-4 mr-1" />
+                                      {deletingId === feedback.id ? "Excluindo..." : "Excluir"}
+                                    </Button>
+                                  </AlertDialogTrigger>
+                                  <AlertDialogContent>
+                                    <AlertDialogHeader>
+                                      <AlertDialogTitle>Confirmar Exclusão</AlertDialogTitle>
+                                      <AlertDialogDescription>
+                                        Tem certeza que deseja excluir o feedback "{feedback.titulo}"? Esta ação não
+                                        pode ser desfeita.
+                                      </AlertDialogDescription>
+                                    </AlertDialogHeader>
+                                    <AlertDialogFooter>
+                                      <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                                      <AlertDialogAction
+                                        onClick={() => handleDelete(feedback.id)}
+                                        className="bg-red-600 hover:bg-red-700"
+                                      >
+                                        Excluir
+                                      </AlertDialogAction>
+                                    </AlertDialogFooter>
+                                  </AlertDialogContent>
+                                </AlertDialog>
+                              )}
                             </div>
                           </div>
 
-                          <p className="text-gray-700 text-sm leading-relaxed">{feedback.mensagem}</p>
+                          <p className="text-gray-700 text-sm leading-relaxed mb-3">{feedback.mensagem}</p>
+
+                          {feedback.recomenda && (
+                            <div className="bg-gray-50 p-3 rounded-xl">
+                              <p className="text-sm text-gray-700">
+                                <strong>Recomendaria:</strong>{" "}
+                                {feedback.recomenda === "sim"
+                                  ? "Sim, recomendaria"
+                                  : feedback.recomenda === "talvez"
+                                    ? "Talvez recomendaria"
+                                    : "Não recomendaria"}
+                              </p>
+                            </div>
+                          )}
                         </div>
                       </div>
                     </CardContent>

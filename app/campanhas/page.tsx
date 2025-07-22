@@ -1,56 +1,156 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Progress } from "@/components/ui/progress"
-import { ArrowLeft, Heart, Search, Plus, Calendar, DollarSign, Target } from "lucide-react"
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog"
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog"
+import { Textarea } from "@/components/ui/textarea"
+import { Label } from "@/components/ui/label"
+import { ArrowLeft, Heart, Search, Plus, Calendar, DollarSign, Target, Trash2, Check, X } from "lucide-react"
 import { FloatingButtons } from "@/components/floating-buttons"
-
-// Dados mockados das campanhas
-const campanhasMockadas = [
-  {
-    id: "1",
-    titulo: "Resgate de Animais Abandonados",
-    descricao: "Campanha para arrecadar fundos para resgate e cuidados médicos de animais abandonados.",
-    meta: 5000,
-    arrecadado: 3250,
-    dataInicio: "2024-01-01",
-    dataFim: "2024-03-01",
-    status: "Ativa",
-    categoria: "Resgate",
-  },
-  {
-    id: "2",
-    titulo: "Castração Gratuita",
-    descricao: "Programa de castração gratuita para pets de famílias carentes.",
-    meta: 3000,
-    arrecadado: 2800,
-    dataInicio: "2023-12-01",
-    dataFim: "2024-02-01",
-    status: "Ativa",
-    categoria: "Saúde",
-  },
-  {
-    id: "3",
-    titulo: "Natal dos Pets sem Lar",
-    descricao: "Campanha especial de Natal para arrecadar ração e medicamentos.",
-    meta: 2000,
-    arrecadado: 2000,
-    dataInicio: "2023-11-01",
-    dataFim: "2023-12-25",
-    status: "Concluída",
-    categoria: "Alimentação",
-  },
-]
+import { campaignService, type Campaign } from "@/services/campaign.service"
+import { useAuthState } from "@/hooks/use-auth"
+import { toast } from "@/hooks/use-toast"
 
 export default function CampanhasPage() {
   const router = useRouter()
-  const [campanhas, setCampanhas] = useState(campanhasMockadas)
+  const { isAdmin } = useAuthState()
+  const [campanhas, setCampanhas] = useState<Campaign[]>([])
+  const [loading, setLoading] = useState(true)
   const [filtro, setFiltro] = useState("")
+  const [deletingId, setDeletingId] = useState<string | null>(null)
+  const [approvingId, setApprovingId] = useState<string | null>(null)
+  const [denyingId, setDenyingId] = useState<string | null>(null)
+  const [denyReason, setDenyReason] = useState("")
+  const [showDenyDialog, setShowDenyDialog] = useState(false)
+  const [selectedCampaignId, setSelectedCampaignId] = useState<string | null>(null)
+
+  useEffect(() => {
+    loadCampanhas()
+  }, [])
+
+  const loadCampanhas = async () => {
+    try {
+      setLoading(true)
+      const response = await campaignService.getCampaigns({
+        page: 1,
+        limit: 100,
+      })
+      setCampanhas(response.data)
+    } catch (error) {
+      console.error("Erro ao carregar campanhas:", error)
+      toast({
+        title: "Erro",
+        description: "Erro ao carregar campanhas. Tente novamente.",
+        variant: "destructive",
+      })
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const handleDelete = async (id: string) => {
+    try {
+      setDeletingId(id)
+      await campaignService.deleteCampaign(id)
+      setCampanhas(campanhas.filter((campanha) => campanha.id !== id))
+      toast({
+        title: "Sucesso!",
+        description: "Campanha excluída com sucesso.",
+      })
+    } catch (error) {
+      console.error("Erro ao excluir campanha:", error)
+      toast({
+        title: "Erro",
+        description: "Erro ao excluir campanha. Tente novamente.",
+        variant: "destructive",
+      })
+    } finally {
+      setDeletingId(null)
+    }
+  }
+
+  const handleApprove = async (id: string) => {
+    try {
+      setApprovingId(id)
+      await campaignService.approveCampaign(id)
+      setCampanhas(
+        campanhas.map((campanha) => (campanha.id === id ? { ...campanha, status: "aprovada" as const } : campanha)),
+      )
+      toast({
+        title: "Sucesso!",
+        description: "Campanha aprovada com sucesso.",
+      })
+    } catch (error) {
+      console.error("Erro ao aprovar campanha:", error)
+      toast({
+        title: "Erro",
+        description: "Erro ao aprovar campanha. Tente novamente.",
+        variant: "destructive",
+      })
+    } finally {
+      setApprovingId(null)
+    }
+  }
+
+  const handleDeny = async () => {
+    if (!selectedCampaignId) return
+
+    try {
+      setDenyingId(selectedCampaignId)
+      await campaignService.denyCampaign(selectedCampaignId, denyReason)
+      setCampanhas(
+        campanhas.map((campanha) =>
+          campanha.id === selectedCampaignId
+            ? { ...campanha, status: "negada" as const, motivoNegacao: denyReason }
+            : campanha,
+        ),
+      )
+      toast({
+        title: "Sucesso!",
+        description: "Campanha negada com sucesso.",
+      })
+      setShowDenyDialog(false)
+      setDenyReason("")
+      setSelectedCampaignId(null)
+    } catch (error) {
+      console.error("Erro ao negar campanha:", error)
+      toast({
+        title: "Erro",
+        description: "Erro ao negar campanha. Tente novamente.",
+        variant: "destructive",
+      })
+    } finally {
+      setDenyingId(null)
+    }
+  }
+
+  const openDenyDialog = (campaignId: string) => {
+    setSelectedCampaignId(campaignId)
+    setShowDenyDialog(true)
+  }
 
   const campanhasFiltradas = campanhas.filter(
     (campanha) =>
@@ -60,12 +160,17 @@ export default function CampanhasPage() {
 
   const getStatusBadge = (status: string) => {
     switch (status) {
-      case "Ativa":
+      case "ativa":
+      case "aprovada":
         return <Badge className="bg-green-100 text-green-800 border-0">Ativa</Badge>
-      case "Concluída":
+      case "pendente":
+        return <Badge className="bg-yellow-100 text-yellow-800 border-0">Pendente</Badge>
+      case "concluida":
         return <Badge className="bg-blue-100 text-blue-800 border-0">Concluída</Badge>
-      case "Pausada":
-        return <Badge className="bg-yellow-100 text-yellow-800 border-0">Pausada</Badge>
+      case "negada":
+        return <Badge className="bg-red-100 text-red-800 border-0">Negada</Badge>
+      case "pausada":
+        return <Badge className="bg-gray-100 text-gray-800 border-0">Pausada</Badge>
       default:
         return <Badge className="bg-gray-100 text-gray-800 border-0">-</Badge>
     }
@@ -73,17 +178,28 @@ export default function CampanhasPage() {
 
   const getCategoriaBadge = (categoria: string) => {
     switch (categoria) {
-      case "Resgate":
+      case "resgate":
         return <Badge className="bg-red-100 text-red-800 border-0">Resgate</Badge>
-      case "Saúde":
+      case "saude":
         return <Badge className="bg-green-100 text-green-800 border-0">Saúde</Badge>
-      case "Alimentação":
+      case "alimentacao":
         return <Badge className="bg-orange-100 text-orange-800 border-0">Alimentação</Badge>
-      case "Abrigo":
+      case "abrigo":
         return <Badge className="bg-blue-100 text-blue-800 border-0">Abrigo</Badge>
       default:
         return <Badge className="bg-gray-100 text-gray-800 border-0">Geral</Badge>
     }
+  }
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-[#D6DD83]/20 via-[#FFBDB6]/20 to-[#30B2B0]/20 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-bpet-primary mx-auto mb-4"></div>
+          <p className="text-gray-600">Carregando campanhas...</p>
+        </div>
+      </div>
+    )
   }
 
   return (
@@ -159,7 +275,9 @@ export default function CampanhasPage() {
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-green-100 text-sm">Campanhas Ativas</p>
-                    <p className="text-3xl font-bold">{campanhas.filter((c) => c.status === "Ativa").length}</p>
+                    <p className="text-3xl font-bold">
+                      {campanhas.filter((c) => c.status === "ativa" || c.status === "aprovada").length}
+                    </p>
                   </div>
                   <Target className="w-8 h-8 text-green-200" />
                 </div>
@@ -200,7 +318,7 @@ export default function CampanhasPage() {
             <CardHeader>
               <CardTitle className="text-xl font-bold text-gray-900 flex items-center gap-2">
                 <Heart className="w-5 h-5 text-red-500" />
-                Suas Campanhas
+                Campanhas
               </CardTitle>
               <CardDescription className="text-gray-600">
                 {campanhasFiltradas.length} campanha{campanhasFiltradas.length !== 1 ? "s" : ""} encontrada
@@ -218,8 +336,16 @@ export default function CampanhasPage() {
                     <CardContent className="p-6">
                       <div className="flex flex-col lg:flex-row gap-6">
                         {/* Imagem da campanha */}
-                        <div className="w-full lg:w-48 h-32 bg-gradient-to-br from-bpet-primary to-[#FFBDB6] rounded-xl flex items-center justify-center">
-                          <Heart className="w-12 h-12 text-white" />
+                        <div className="w-full lg:w-48 h-32 bg-gradient-to-br from-bpet-primary to-[#FFBDB6] rounded-xl flex items-center justify-center overflow-hidden">
+                          {campanha.imagem ? (
+                            <img
+                              src={campanha.imagem || "/placeholder.svg"}
+                              alt={campanha.titulo}
+                              className="w-full h-full object-cover"
+                            />
+                          ) : (
+                            <Heart className="w-12 h-12 text-white" />
+                          )}
                         </div>
 
                         {/* Informações da campanha */}
@@ -232,13 +358,70 @@ export default function CampanhasPage() {
                                 {getCategoriaBadge(campanha.categoria)}
                                 {getStatusBadge(campanha.status)}
                               </div>
+                              {campanha.userName && (
+                                <p className="text-sm text-gray-500 mb-2">Por: {campanha.userName}</p>
+                              )}
                             </div>
-                            <div className="text-right">
+                            <div className="text-right flex flex-col items-end gap-2">
                               <p className="text-sm text-gray-500 mb-1">
                                 <Calendar className="w-4 h-4 inline mr-1" />
                                 {new Date(campanha.dataInicio).toLocaleDateString("pt-BR")} até{" "}
                                 {new Date(campanha.dataFim).toLocaleDateString("pt-BR")}
                               </p>
+
+                              {/* Botões de Admin */}
+                              {isAdmin && (
+                                <div className="flex gap-2 mt-2">
+                                  {campanha.status === "pendente" && (
+                                    <>
+                                      <Button
+                                        size="sm"
+                                        onClick={() => handleApprove(campanha.id)}
+                                        disabled={approvingId === campanha.id}
+                                        className="bg-green-600 hover:bg-green-700 text-white"
+                                      >
+                                        <Check className="w-4 h-4 mr-1" />
+                                        {approvingId === campanha.id ? "Aprovando..." : "Aprovar"}
+                                      </Button>
+                                      <Button
+                                        size="sm"
+                                        onClick={() => openDenyDialog(campanha.id)}
+                                        disabled={denyingId === campanha.id}
+                                        className="bg-orange-600 hover:bg-orange-700 text-white"
+                                      >
+                                        <X className="w-4 h-4 mr-1" />
+                                        Negar
+                                      </Button>
+                                    </>
+                                  )}
+                                  <AlertDialog>
+                                    <AlertDialogTrigger asChild>
+                                      <Button variant="destructive" size="sm" disabled={deletingId === campanha.id}>
+                                        <Trash2 className="w-4 h-4 mr-1" />
+                                        {deletingId === campanha.id ? "Excluindo..." : "Excluir"}
+                                      </Button>
+                                    </AlertDialogTrigger>
+                                    <AlertDialogContent>
+                                      <AlertDialogHeader>
+                                        <AlertDialogTitle>Confirmar Exclusão</AlertDialogTitle>
+                                        <AlertDialogDescription>
+                                          Tem certeza que deseja excluir a campanha "{campanha.titulo}"? Esta ação não
+                                          pode ser desfeita.
+                                        </AlertDialogDescription>
+                                      </AlertDialogHeader>
+                                      <AlertDialogFooter>
+                                        <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                                        <AlertDialogAction
+                                          onClick={() => handleDelete(campanha.id)}
+                                          className="bg-red-600 hover:bg-red-700"
+                                        >
+                                          Excluir
+                                        </AlertDialogAction>
+                                      </AlertDialogFooter>
+                                    </AlertDialogContent>
+                                  </AlertDialog>
+                                </div>
+                              )}
                             </div>
                           </div>
 
@@ -260,6 +443,15 @@ export default function CampanhasPage() {
                               </span>
                             </div>
                           </div>
+
+                          {/* Motivo de negação */}
+                          {campanha.status === "negada" && campanha.motivoNegacao && (
+                            <div className="mt-4 p-3 bg-red-50 border border-red-200 rounded-xl">
+                              <p className="text-sm text-red-800">
+                                <strong>Motivo da negação:</strong> {campanha.motivoNegacao}
+                              </p>
+                            </div>
+                          )}
                         </div>
                       </div>
                     </CardContent>
@@ -278,6 +470,36 @@ export default function CampanhasPage() {
           </Card>
         </div>
       </main>
+
+      {/* Dialog para negar campanha */}
+      <Dialog open={showDenyDialog} onOpenChange={setShowDenyDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Negar Campanha</DialogTitle>
+            <DialogDescription>Informe o motivo da negação desta campanha.</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <Label htmlFor="denyReason">Motivo da Negação</Label>
+              <Textarea
+                id="denyReason"
+                value={denyReason}
+                onChange={(e) => setDenyReason(e.target.value)}
+                placeholder="Descreva o motivo da negação..."
+                className="mt-2"
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowDenyDialog(false)}>
+              Cancelar
+            </Button>
+            <Button onClick={handleDeny} disabled={!denyReason.trim() || denyingId === selectedCampaignId}>
+              {denyingId === selectedCampaignId ? "Negando..." : "Negar Campanha"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* Botões Flutuantes */}
       <FloatingButtons />

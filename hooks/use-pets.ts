@@ -1,39 +1,90 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import type { Pet } from "@/types/api"
-import { PetService } from "@/services/pet.service"
 import { toast } from "@/hooks/use-toast"
 
-export function usePets(ownerId?: string) {
-  const [pets, setPets] = useState<Pet[]>([])
-  const [isLoading, setIsLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
-  const [pagination, setPagination] = useState({
-    page: 1,
-    limit: 10,
-    total: 0,
-    totalPages: 0,
-  })
+export interface Pet {
+  id: string
+  name: string
+  species: string
+  breed?: string
+  age?: number
+  weight?: number
+  color?: string
+  gender: "male" | "female"
+  ownerId: string
+  avatar?: string
+  isActive: boolean
+  birthDate?: string
+  microchipId?: string
+  notes?: string
+  createdAt: string
+  updatedAt: string
+}
 
-  const fetchPets = async (page = 1, limit = 10) => {
+export interface CreatePetRequest {
+  name: string
+  species: string
+  breed?: string
+  age?: number
+  weight?: number
+  color?: string
+  gender: "male" | "female"
+  birthDate?: string
+  microchipId?: string
+  notes?: string
+}
+
+export function usePets() {
+  const [pets, setPets] = useState<Pet[]>([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+
+  const fetchPets = async () => {
     try {
-      setIsLoading(true)
+      setLoading(true)
       setError(null)
 
-      const response = await PetService.getPets({
-        page,
-        limit,
-        ownerId,
-      })
+      // Simulação de dados - substituir pela chamada real da API
+      const mockPets: Pet[] = [
+        {
+          id: "1",
+          name: "Rex",
+          species: "Cão",
+          breed: "Golden Retriever",
+          age: 3,
+          weight: 25.5,
+          color: "Dourado",
+          gender: "male",
+          ownerId: "user1",
+          avatar: "/placeholder-user.jpg",
+          isActive: true,
+          birthDate: "2021-03-15",
+          microchipId: "123456789",
+          notes: "Pet muito dócil e brincalhão",
+          createdAt: "2021-03-20T10:00:00Z",
+          updatedAt: "2024-01-15T14:30:00Z",
+        },
+        {
+          id: "2",
+          name: "Mimi",
+          species: "Gato",
+          breed: "Persa",
+          age: 2,
+          weight: 4.2,
+          color: "Branco",
+          gender: "female",
+          ownerId: "user1",
+          avatar: "/placeholder-user.jpg",
+          isActive: true,
+          birthDate: "2022-07-10",
+          notes: "Gata muito carinhosa",
+          createdAt: "2022-07-15T09:00:00Z",
+          updatedAt: "2024-01-10T16:20:00Z",
+        },
+      ]
 
-      setPets(response.data)
-      setPagination({
-        page: response.page,
-        limit: response.limit,
-        total: response.total,
-        totalPages: response.totalPages,
-      })
+      setPets(mockPets)
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : "Erro ao carregar pets"
       setError(errorMessage)
@@ -43,106 +94,107 @@ export function usePets(ownerId?: string) {
         variant: "destructive",
       })
     } finally {
-      setIsLoading(false)
+      setLoading(false)
     }
   }
 
-  const createPet = async (petData: Omit<Pet, "id" | "createdAt" | "updatedAt">) => {
+  const createPet = async (data: CreatePetRequest) => {
     try {
-      const newPet = await PetService.createPet(petData)
+      // Simulação - substituir pela chamada real da API
+      const newPet: Pet = {
+        id: Date.now().toString(),
+        ...data,
+        ownerId: "current-user",
+        isActive: true,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      }
+
       setPets((prev) => [newPet, ...prev])
 
       toast({
-        title: "Pet cadastrado com sucesso!",
-        description: `${newPet.name} foi adicionado à sua lista de pets.`,
+        title: "Sucesso",
+        description: "Pet cadastrado com sucesso!",
       })
 
       return newPet
     } catch (error) {
-      console.error("Create pet error:", error)
+      const errorMessage = error instanceof Error ? error.message : "Erro ao cadastrar pet"
+      toast({
+        title: "Erro",
+        description: errorMessage,
+        variant: "destructive",
+      })
       throw error
     }
   }
 
-  const updatePet = async (id: string, petData: Partial<Pet>) => {
+  const updatePet = async (id: string, data: Partial<Pet>) => {
     try {
-      const updatedPet = await PetService.updatePet(id, petData)
-      setPets((prev) => prev.map((pet) => (pet.id === id ? updatedPet : pet)))
+      setPets((prev) =>
+        prev.map((pet) => (pet.id === id ? { ...pet, ...data, updatedAt: new Date().toISOString() } : pet)),
+      )
 
       toast({
-        title: "Pet atualizado com sucesso!",
-        description: `As informações de ${updatedPet.name} foram atualizadas.`,
+        title: "Sucesso",
+        description: "Pet atualizado com sucesso!",
       })
-
-      return updatedPet
     } catch (error) {
-      console.error("Update pet error:", error)
+      const errorMessage = error instanceof Error ? error.message : "Erro ao atualizar pet"
+      toast({
+        title: "Erro",
+        description: errorMessage,
+        variant: "destructive",
+      })
       throw error
     }
   }
 
   const deletePet = async (id: string) => {
     try {
-      await PetService.deletePet(id)
       setPets((prev) => prev.filter((pet) => pet.id !== id))
 
       toast({
-        title: "Pet removido com sucesso!",
-        description: "O pet foi removido da sua lista.",
+        title: "Sucesso",
+        description: "Pet removido com sucesso!",
       })
     } catch (error) {
-      console.error("Delete pet error:", error)
+      const errorMessage = error instanceof Error ? error.message : "Erro ao remover pet"
+      toast({
+        title: "Erro",
+        description: errorMessage,
+        variant: "destructive",
+      })
       throw error
     }
   }
 
+  const getPetById = (id: string) => {
+    return pets.find((pet) => pet.id === id)
+  }
+
+  const getPetsBySpecies = (species: string) => {
+    return pets.filter((pet) => pet.species.toLowerCase() === species.toLowerCase())
+  }
+
+  const getActivePets = () => {
+    return pets.filter((pet) => pet.isActive)
+  }
+
   useEffect(() => {
     fetchPets()
-  }, [ownerId])
+  }, [])
 
   return {
     pets,
-    isLoading,
+    loading,
     error,
-    pagination,
-    fetchPets,
+    refetch: fetchPets,
     createPet,
     updatePet,
     deletePet,
-    refetch: () => fetchPets(pagination.page, pagination.limit),
-  }
-}
-
-export function usePet(id: string) {
-  const [pet, setPet] = useState<Pet | null>(null)
-  const [isLoading, setIsLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
-
-  const fetchPet = async () => {
-    try {
-      setIsLoading(true)
-      setError(null)
-
-      const petData = await PetService.getPetById(id)
-      setPet(petData)
-    } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : "Erro ao carregar pet"
-      setError(errorMessage)
-    } finally {
-      setIsLoading(false)
-    }
-  }
-
-  useEffect(() => {
-    if (id) {
-      fetchPet()
-    }
-  }, [id])
-
-  return {
-    pet,
-    isLoading,
-    error,
-    refetch: fetchPet,
+    getPetById,
+    getPetsBySpecies,
+    getActivePets,
   }
 }

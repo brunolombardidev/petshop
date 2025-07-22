@@ -9,13 +9,66 @@ import { Badge } from "@/components/ui/badge"
 import { ArrowLeft, Search, PawPrint, MapPin, Star, Phone, Mail, Building, Package, User, Users } from "lucide-react"
 import { FloatingButtons } from "@/components/floating-buttons"
 
+// Tipos para os diferentes usuários
+interface BaseUser {
+  id: string
+  nome: string
+  telefone: string
+  email: string
+  foto: string
+}
+
+interface Cliente extends BaseUser {
+  tipo: "cliente"
+  endereco: string
+  cidade: string
+  avaliacao: number
+  especialidades: string[]
+}
+
+interface Colaborador extends BaseUser {
+  tipo: "colaborador"
+  cargo: string
+  departamento: string
+  dataAdmissao: string
+  endereco: string
+  pets: number
+  status: string
+}
+
+interface PetShop extends BaseUser {
+  tipo: "petshop"
+  endereco: string
+  cidade: string
+  avaliacao: number
+  especialidades: string[]
+}
+
+interface Fornecedor extends BaseUser {
+  tipo: "fornecedor"
+  endereco: string
+  cidade: string
+  avaliacao: number
+  especialidades: string[]
+}
+
+interface Empresa extends BaseUser {
+  tipo: "empresa"
+  endereco: string
+  cidade: string
+  avaliacao: number
+  especialidades: string[]
+}
+
+type Usuario = Cliente | Colaborador | PetShop | Fornecedor | Empresa
+
 // Dados mockados dos usuários do sistema
 const usuariosData = {
   clientes: [
     {
       id: "1",
       nome: "Ana Costa Silva",
-      tipo: "cliente",
+      tipo: "cliente" as const,
       endereco: "Rua das Palmeiras, 456 - Jardins",
       cidade: "São Paulo",
       telefone: "(11) 9999-1234",
@@ -27,7 +80,7 @@ const usuariosData = {
     {
       id: "2",
       nome: "Carlos Eduardo Santos",
-      tipo: "cliente",
+      tipo: "cliente" as const,
       endereco: "Av. Brigadeiro, 789 - Centro",
       cidade: "São Paulo",
       telefone: "(11) 9888-5678",
@@ -36,12 +89,12 @@ const usuariosData = {
       especialidades: ["Cliente Regular", "Pets: 2 Gatos"],
       foto: "/placeholder.svg?height=80&width=80",
     },
-  ],
+  ] as Cliente[],
   petshops: [
     {
       id: "1",
       nome: "PetShop Amigo Fiel",
-      tipo: "petshop",
+      tipo: "petshop" as const,
       endereco: "Rua das Flores, 123 - Centro",
       cidade: "São Paulo",
       telefone: "(11) 3333-4444",
@@ -53,7 +106,7 @@ const usuariosData = {
     {
       id: "2",
       nome: "Clínica VetCare",
-      tipo: "petshop",
+      tipo: "petshop" as const,
       endereco: "Av. Paulista, 456 - Bela Vista",
       cidade: "São Paulo",
       telefone: "(11) 5555-6666",
@@ -62,12 +115,12 @@ const usuariosData = {
       especialidades: ["Veterinária", "Cirurgia", "Emergência 24h"],
       foto: "/placeholder.svg?height=80&width=80",
     },
-  ],
+  ] as PetShop[],
   fornecedores: [
     {
       id: "1",
       nome: "Distribuidora Pet Brasil",
-      tipo: "fornecedor",
+      tipo: "fornecedor" as const,
       endereco: "Rod. Anhanguera, km 25 - Osasco",
       cidade: "São Paulo",
       telefone: "(11) 4444-5555",
@@ -79,7 +132,7 @@ const usuariosData = {
     {
       id: "2",
       nome: "Mega Pet Suprimentos",
-      tipo: "fornecedor",
+      tipo: "fornecedor" as const,
       endereco: "Av. Industrial, 1500 - Guarulhos",
       cidade: "São Paulo",
       telefone: "(11) 6666-7777",
@@ -88,12 +141,12 @@ const usuariosData = {
       especialidades: ["Brinquedos", "Acessórios", "Higiene"],
       foto: "/placeholder.svg?height=80&width=80",
     },
-  ],
+  ] as Fornecedor[],
   empresas: [
     {
       id: "1",
       nome: "Corporação Pet Solutions",
-      tipo: "empresa",
+      tipo: "empresa" as const,
       endereco: "Av. Faria Lima, 2000 - Itaim Bibi",
       cidade: "São Paulo",
       telefone: "(11) 3000-9000",
@@ -105,7 +158,7 @@ const usuariosData = {
     {
       id: "2",
       nome: "Empresa Vida Animal Ltda",
-      tipo: "empresa",
+      tipo: "empresa" as const,
       endereco: "Rua Vergueiro, 3500 - Vila Mariana",
       cidade: "São Paulo",
       telefone: "(11) 2500-8000",
@@ -114,11 +167,11 @@ const usuariosData = {
       especialidades: ["Planos de Saúde Pet", "Seguros", "Telemedicina"],
       foto: "/placeholder.svg?height=80&width=80",
     },
-  ],
+  ] as Empresa[],
 }
 
 // Dados mockados dos colaboradores da empresa
-const colaboradoresData = [
+const colaboradoresData: Colaborador[] = [
   {
     id: "1",
     nome: "João Silva Santos",
@@ -128,6 +181,7 @@ const colaboradoresData = [
     dataAdmissao: "2023-01-15",
     telefone: "(11) 9999-1234",
     email: "joao.silva@empresa.com",
+    endereco: "Rua das Empresas, 100 - Centro",
     pets: 2,
     status: "ativo",
     foto: "/placeholder.svg?height=80&width=80",
@@ -141,6 +195,7 @@ const colaboradoresData = [
     dataAdmissao: "2022-08-20",
     telefone: "(11) 9888-5678",
     email: "maria.oliveira@empresa.com",
+    endereco: "Av. Comercial, 200 - Vila Nova",
     pets: 1,
     status: "ativo",
     foto: "/placeholder.svg?height=80&width=80",
@@ -154,6 +209,7 @@ const colaboradoresData = [
     dataAdmissao: "2021-03-10",
     telefone: "(11) 9777-9012",
     email: "pedro.lima@empresa.com",
+    endereco: "Rua Tech, 300 - Inovação",
     pets: 3,
     status: "ativo",
     foto: "/placeholder.svg?height=80&width=80",
@@ -167,6 +223,7 @@ const colaboradoresData = [
     dataAdmissao: "2023-06-01",
     telefone: "(11) 9666-3456",
     email: "ana.ferreira@empresa.com",
+    endereco: "Rua Financeira, 400 - Centro",
     pets: 0,
     status: "ativo",
     foto: "/placeholder.svg?height=80&width=80",
@@ -178,10 +235,10 @@ export default function BuscaPage() {
   const searchParams = useSearchParams()
   const tipoUsuario = searchParams.get("tipo") || "cliente"
   const [filtro, setFiltro] = useState("")
-  const [usuariosFiltrados, setUsuariosFiltrados] = useState<any[]>([])
+  const [usuariosFiltrados, setUsuariosFiltrados] = useState<Usuario[]>([])
 
   // Define quais usuários cada tipo pode ver
-  const getUsuariosPermitidos = () => {
+  const getUsuariosPermitidos = (): Usuario[] => {
     switch (tipoUsuario) {
       case "cliente":
       case "empresa":
@@ -242,14 +299,37 @@ export default function BuscaPage() {
     if (filtro.trim() === "") {
       setUsuariosFiltrados(usuarios)
     } else {
-      const filtrados = usuarios.filter(
-        (usuario) =>
-          usuario.nome.toLowerCase().includes(filtro.toLowerCase()) ||
-          usuario.endereco?.toLowerCase().includes(filtro.toLowerCase()) ||
-          usuario.especialidades?.some((esp: string) => esp.toLowerCase().includes(filtro.toLowerCase())) ||
-          usuario.cargo?.toLowerCase().includes(filtro.toLowerCase()) ||
-          usuario.departamento?.toLowerCase().includes(filtro.toLowerCase()),
-      )
+      const filtrados = usuarios.filter((usuario) => {
+        const searchTerm = filtro.toLowerCase()
+
+        // Busca sempre pelo nome
+        if (usuario.nome.toLowerCase().includes(searchTerm)) {
+          return true
+        }
+
+        // Busca por endereço (se existir)
+        if ("endereco" in usuario && usuario.endereco.toLowerCase().includes(searchTerm)) {
+          return true
+        }
+
+        // Busca por especialidades (se existir)
+        if (
+          "especialidades" in usuario &&
+          usuario.especialidades.some((esp: string) => esp.toLowerCase().includes(searchTerm))
+        ) {
+          return true
+        }
+
+        // Busca por cargo (se for colaborador)
+        if (
+          usuario.tipo === "colaborador" &&
+          (usuario.cargo.toLowerCase().includes(searchTerm) || usuario.departamento.toLowerCase().includes(searchTerm))
+        ) {
+          return true
+        }
+
+        return false
+      })
       setUsuariosFiltrados(filtrados)
     }
   }, [filtro, tipoUsuario])
@@ -280,6 +360,8 @@ export default function BuscaPage() {
         return "bg-purple-100 text-purple-800"
       case "empresa":
         return "bg-indigo-100 text-indigo-800"
+      case "colaborador":
+        return "bg-green-100 text-green-800"
       default:
         return "bg-gray-100 text-gray-800"
     }
@@ -429,17 +511,21 @@ export default function BuscaPage() {
                               </h3>
                               <div className="flex items-center gap-2 mt-1">
                                 <div className="flex items-center gap-1">
-                                  {[...Array(5)].map((_, i) => (
-                                    <Star
-                                      key={i}
-                                      className={`w-4 h-4 ${
-                                        i < Math.floor(usuario.avaliacao)
-                                          ? "text-yellow-500 fill-current"
-                                          : "text-gray-300"
-                                      }`}
-                                    />
-                                  ))}
-                                  <span className="text-sm text-gray-600 ml-1">{usuario.avaliacao}</span>
+                                  {"avaliacao" in usuario && (
+                                    <>
+                                      {[...Array(5)].map((_, i) => (
+                                        <Star
+                                          key={i}
+                                          className={`w-4 h-4 ${
+                                            i < Math.floor(usuario.avaliacao)
+                                              ? "text-yellow-500 fill-current"
+                                              : "text-gray-300"
+                                          }`}
+                                        />
+                                      ))}
+                                      <span className="text-sm text-gray-600 ml-1">{usuario.avaliacao}</span>
+                                    </>
+                                  )}
                                 </div>
                               </div>
                             </div>
@@ -452,8 +538,8 @@ export default function BuscaPage() {
                             <div className="flex items-center gap-2 text-gray-600">
                               <MapPin className="w-4 h-4" />
                               <div>
-                                <p className="text-sm">{usuario.endereco}</p>
-                                <p className="text-xs text-gray-500">{usuario.cidade}</p>
+                                {"endereco" in usuario && <p className="text-sm">{usuario.endereco}</p>}
+                                {"cidade" in usuario && <p className="text-xs text-gray-500">{usuario.cidade}</p>}
                               </div>
                             </div>
                             <div className="space-y-1">
@@ -469,20 +555,22 @@ export default function BuscaPage() {
                           </div>
 
                           {/* Especialidades */}
-                          <div>
-                            <p className="text-sm font-medium text-gray-700 mb-2">Especialidades:</p>
-                            <div className="flex flex-wrap gap-2">
-                              {usuario.especialidades.map((especialidade: string, index: number) => (
-                                <Badge
-                                  key={index}
-                                  className="bg-blue-100 text-blue-800 border-0 flex items-center gap-1"
-                                >
-                                  {getIconeEspecialidade(especialidade)}
-                                  {especialidade}
-                                </Badge>
-                              ))}
+                          {"especialidades" in usuario && (
+                            <div>
+                              <p className="text-sm font-medium text-gray-700 mb-2">Especialidades:</p>
+                              <div className="flex flex-wrap gap-2">
+                                {usuario.especialidades.map((especialidade: string, index: number) => (
+                                  <Badge
+                                    key={index}
+                                    className="bg-blue-100 text-blue-800 border-0 flex items-center gap-1"
+                                  >
+                                    {getIconeEspecialidade(especialidade)}
+                                    {especialidade}
+                                  </Badge>
+                                ))}
+                              </div>
                             </div>
-                          </div>
+                          )}
                         </div>
                       )}
                     </div>

@@ -1,494 +1,782 @@
 "use client"
 
-import { useState } from "react"
-import { useRouter } from "next/navigation"
+import type React from "react"
+
+import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import {
-  Crown,
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog"
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import { Textarea } from "@/components/ui/textarea"
+import { Switch } from "@/components/ui/switch"
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
+import { Skeleton } from "@/components/ui/skeleton"
+import {
   Check,
   X,
-  Calendar,
-  CreditCard,
+  Plus,
+  Edit,
+  Trash2,
   Download,
-  FileText,
+  CreditCard,
+  Users,
   TrendingUp,
-  Shield,
   AlertCircle,
+  Star,
+  FileText,
+  DollarSign,
 } from "lucide-react"
 import { UnifiedHeader } from "@/components/unified-header"
-import { FloatingButtons } from "@/components/floating-buttons"
+import { useAuth } from "@/hooks/use-auth"
+import { useSubscription, usePlans, useInvoices, useSubscriptionStats } from "@/hooks/use-subscription"
+import { SubscriptionService, type Plan } from "@/services/subscription.service"
+import { toast } from "@/hooks/use-toast"
+import { format } from "date-fns"
+import { ptBR } from "date-fns/locale"
 
 export default function AssinaturaPage() {
-  const router = useRouter()
-  const [planoSelecionado, setPlanoSelecionado] = useState<string | null>(null)
+  const { user } = useAuth()
+  const {
+    subscription,
+    loading: subscriptionLoading,
+    changePlan,
+    cancelSubscription,
+    reactivateSubscription,
+    createSubscription,
+  } = useSubscription()
+  const { plans, loading: plansLoading, createPlan, updatePlan, deletePlan, togglePlanStatus } = usePlans()
+  const { invoices, loading: invoicesLoading, downloadInvoice } = useInvoices()
+  const { stats, loading: statsLoading } = useSubscriptionStats()
 
-  const [user] = useState({
-    name: "Maria Silva",
-    email: "maria@email.com",
-    avatar: "/placeholder-user.jpg",
-    userType: "cliente" as const,
-  })
+  const [selectedPlan, setSelectedPlan] = useState<Plan | null>(null)
+  const [isCreatePlanOpen, setIsCreatePlanOpen] = useState(false)
+  const [isEditPlanOpen, setIsEditPlanOpen] = useState(false)
+  const [editingPlan, setEditingPlan] = useState<Plan | null>(null)
+  const [canChangePlan, setCanChangePlan] = useState({ canChange: true, reason: "", nextChangeDate: "" })
 
-  // Assinatura atual
-  const assinaturaAtual = {
-    plano: "Premium",
-    status: "ativa",
-    dataInicio: "2023-06-15",
-    proximaCobranca: "2024-02-15",
-    valor: 49.9,
-    desconto: 0,
-    metodoPagamento: "Cartão **** 1234",
-  }
+  const isAdmin = user?.role === "admin"
 
-  // Planos disponíveis
-  const planos = [
-    {
-      id: "basico",
-      nome: "Básico",
-      preco: 19.9,
-      precoAnual: 199.0,
-      descricao: "Ideal para quem está começando",
-      cor: "from-gray-500 to-gray-600",
-      popular: false,
-      recursos: [
-        "1 pet cadastrado",
-        "Cartão pet básico",
-        "5% de desconto em parceiros",
-        "Lembretes de vacina",
-        "Suporte por email",
-        "Histórico básico",
-      ],
-      limitacoes: ["Sem agendamento online", "Sem relatórios avançados", "Sem suporte prioritário"],
-    },
-    {
-      id: "premium",
-      nome: "Premium",
-      preco: 49.9,
-      precoAnual: 499.0,
-      descricao: "O mais escolhido pelos nossos usuários",
-      cor: "from-blue-500 to-purple-600",
-      popular: true,
-      recursos: [
-        "Até 5 pets cadastrados",
-        "Cartão pet premium",
-        "15% de desconto em parceiros",
-        "Agendamento online",
-        "Lembretes personalizados",
-        "Relatórios de saúde",
-        "Suporte prioritário",
-        "Histórico completo",
-        "Backup na nuvem",
-      ],
-      limitacoes: ["Limite de 5 pets"],
-    },
-    {
-      id: "familia",
-      nome: "Família",
-      preco: 89.9,
-      precoAnual: 899.0,
-      descricao: "Para famílias com muitos pets",
-      cor: "from-purple-500 to-pink-600",
-      popular: false,
-      recursos: [
-        "Pets ilimitados",
-        "Cartão pet premium+",
-        "25% de desconto em parceiros",
-        "Agendamento prioritário",
-        "Consultas veterinárias online",
-        "Relatórios avançados",
-        "Suporte 24/7",
-        "Múltiplos usuários",
-        "Seguro pet básico",
-        "Telemedicina",
-      ],
-      limitacoes: [],
-    },
-  ]
+  // Verificar se pode alterar plano
+  useEffect(() => {
+    if (subscription && !isAdmin) {
+      SubscriptionService.canChangePlan()
+        .then(setCanChangePlan)
+        .catch(() => {})
+    }
+  }, [subscription, isAdmin])
 
-  // Histórico de faturas
-  const faturas = [
-    {
-      id: "1",
-      data: "2024-01-15",
-      valor: 49.9,
-      status: "paga",
-      metodo: "Cartão **** 1234",
-      periodo: "Jan 2024",
-    },
-    {
-      id: "2",
-      data: "2023-12-15",
-      valor: 49.9,
-      status: "paga",
-      metodo: "Cartão **** 1234",
-      periodo: "Dez 2023",
-    },
-    {
-      id: "3",
-      data: "2023-11-15",
-      valor: 49.9,
-      status: "paga",
-      metodo: "Cartão **** 1234",
-      periodo: "Nov 2023",
-    },
-    {
-      id: "4",
-      data: "2023-10-15",
-      valor: 49.9,
-      status: "paga",
-      metodo: "Cartão **** 1234",
-      periodo: "Out 2023",
-    },
-  ]
-
-  const handleUpgrade = (planoId: string) => {
-    setPlanoSelecionado(planoId)
-    // Aqui você implementaria a lógica de upgrade
-    console.log("Upgrade para:", planoId)
-  }
-
-  const handleDowngrade = () => {
-    // Aqui você implementaria a lógica de downgrade
-    console.log("Downgrade solicitado")
-  }
-
-  const handleCancelar = () => {
-    // Aqui você implementaria a lógica de cancelamento
-    console.log("Cancelamento solicitado")
-  }
-
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case "ativa":
-        return "bg-green-100 text-green-800"
-      case "cancelada":
-        return "bg-red-100 text-red-800"
-      case "suspensa":
-        return "bg-yellow-100 text-yellow-800"
-      default:
-        return "bg-gray-100 text-gray-800"
+  const handleCreateSubscription = async (planId: string) => {
+    try {
+      await createSubscription(planId)
+    } catch (error) {
+      // Error já tratado no hook
     }
   }
 
-  const getFaturaStatusColor = (status: string) => {
-    switch (status) {
-      case "paga":
-        return "bg-green-100 text-green-800"
-      case "pendente":
-        return "bg-yellow-100 text-yellow-800"
-      case "vencida":
-        return "bg-red-100 text-red-800"
-      default:
-        return "bg-gray-100 text-gray-800"
+  const handleChangePlan = async (newPlanId: string) => {
+    if (!canChangePlan.canChange) {
+      toast({
+        title: "Não é possível alterar o plano",
+        description: canChangePlan.reason,
+        variant: "destructive",
+      })
+      return
     }
+
+    try {
+      await changePlan(newPlanId)
+    } catch (error) {
+      // Error já tratado no hook
+    }
+  }
+
+  const formatCurrency = (value: number) => {
+    return new Intl.NumberFormat("pt-BR", {
+      style: "currency",
+      currency: "BRL",
+    }).format(value)
+  }
+
+  const formatDate = (date: string) => {
+    return format(new Date(date), "dd/MM/yyyy", { locale: ptBR })
+  }
+
+  const getStatusBadge = (status: string) => {
+    const statusMap = {
+      active: { label: "Ativo", color: "bg-green-100 text-green-800" },
+      cancelled: { label: "Cancelado", color: "bg-red-100 text-red-800" },
+      expired: { label: "Expirado", color: "bg-gray-100 text-gray-800" },
+      pending: { label: "Pendente", color: "bg-yellow-100 text-yellow-800" },
+      paid: { label: "Pago", color: "bg-green-100 text-green-800" },
+      failed: { label: "Falhou", color: "bg-red-100 text-red-800" },
+    }
+
+    const statusInfo = statusMap[status as keyof typeof statusMap] || statusMap.pending
+    return <Badge className={`${statusInfo.color} border-0`}>{statusInfo.label}</Badge>
+  }
+
+  // Componente para criar/editar plano
+  const PlanForm = ({
+    plan,
+    onSave,
+    onClose,
+  }: { plan?: Plan | null; onSave: (planData: any) => void; onClose: () => void }) => {
+    const [formData, setFormData] = useState({
+      name: plan?.name || "",
+      description: plan?.description || "",
+      price: plan?.price || 0,
+      duration: plan?.duration || 30,
+      features: plan?.features?.join("\n") || "",
+      isActive: plan?.isActive ?? true,
+      isPopular: plan?.isPopular || false,
+      maxUsers: plan?.maxUsers || 0,
+      maxPets: plan?.maxPets || 0,
+      maxServices: plan?.maxServices || 0,
+    })
+
+    const handleSubmit = (e: React.FormEvent) => {
+      e.preventDefault()
+      onSave({
+        ...formData,
+        features: formData.features.split("\n").filter((f) => f.trim()),
+        maxUsers: formData.maxUsers || undefined,
+        maxPets: formData.maxPets || undefined,
+        maxServices: formData.maxServices || undefined,
+      })
+      onClose()
+    }
+
+    return (
+      <form onSubmit={handleSubmit} className="space-y-4">
+        <div className="grid grid-cols-2 gap-4">
+          <div>
+            <Label htmlFor="name">Nome do Plano</Label>
+            <Input
+              id="name"
+              value={formData.name}
+              onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+              required
+            />
+          </div>
+          <div>
+            <Label htmlFor="price">Preço (R$)</Label>
+            <Input
+              id="price"
+              type="number"
+              step="0.01"
+              value={formData.price}
+              onChange={(e) => setFormData({ ...formData, price: Number.parseFloat(e.target.value) })}
+              required
+            />
+          </div>
+        </div>
+
+        <div>
+          <Label htmlFor="description">Descrição</Label>
+          <Textarea
+            id="description"
+            value={formData.description}
+            onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+            rows={3}
+          />
+        </div>
+
+        <div className="grid grid-cols-2 gap-4">
+          <div>
+            <Label htmlFor="duration">Duração (dias)</Label>
+            <Input
+              id="duration"
+              type="number"
+              value={formData.duration}
+              onChange={(e) => setFormData({ ...formData, duration: Number.parseInt(e.target.value) })}
+              required
+            />
+          </div>
+          <div className="space-y-2">
+            <div className="flex items-center space-x-2">
+              <Switch
+                id="isActive"
+                checked={formData.isActive}
+                onCheckedChange={(checked) => setFormData({ ...formData, isActive: checked })}
+              />
+              <Label htmlFor="isActive">Plano Ativo</Label>
+            </div>
+            <div className="flex items-center space-x-2">
+              <Switch
+                id="isPopular"
+                checked={formData.isPopular}
+                onCheckedChange={(checked) => setFormData({ ...formData, isPopular: checked })}
+              />
+              <Label htmlFor="isPopular">Plano Popular</Label>
+            </div>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-3 gap-4">
+          <div>
+            <Label htmlFor="maxUsers">Máx. Usuários</Label>
+            <Input
+              id="maxUsers"
+              type="number"
+              value={formData.maxUsers}
+              onChange={(e) => setFormData({ ...formData, maxUsers: Number.parseInt(e.target.value) })}
+              placeholder="Ilimitado"
+            />
+          </div>
+          <div>
+            <Label htmlFor="maxPets">Máx. Pets</Label>
+            <Input
+              id="maxPets"
+              type="number"
+              value={formData.maxPets}
+              onChange={(e) => setFormData({ ...formData, maxPets: Number.parseInt(e.target.value) })}
+              placeholder="Ilimitado"
+            />
+          </div>
+          <div>
+            <Label htmlFor="maxServices">Máx. Serviços</Label>
+            <Input
+              id="maxServices"
+              type="number"
+              value={formData.maxServices}
+              onChange={(e) => setFormData({ ...formData, maxServices: Number.parseInt(e.target.value) })}
+              placeholder="Ilimitado"
+            />
+          </div>
+        </div>
+
+        <div>
+          <Label htmlFor="features">Recursos (um por linha)</Label>
+          <Textarea
+            id="features"
+            value={formData.features}
+            onChange={(e) => setFormData({ ...formData, features: e.target.value })}
+            rows={5}
+            placeholder="Recurso 1&#10;Recurso 2&#10;Recurso 3"
+          />
+        </div>
+
+        <div className="flex justify-end space-x-2">
+          <Button type="button" variant="outline" onClick={onClose}>
+            Cancelar
+          </Button>
+          <Button type="submit">{plan ? "Atualizar" : "Criar"} Plano</Button>
+        </div>
+      </form>
+    )
+  }
+
+  if (!user) {
+    return <div>Carregando...</div>
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-50/50 via-blue-50/30 to-pink-50/50">
-      <UnifiedHeader user={user} />
+    <div className="min-h-screen bg-gray-50">
+      <UnifiedHeader
+        user={{
+          name: user.name,
+          email: user.email,
+          avatar: user.avatar,
+          userType: user.role as any,
+        }}
+        title="Assinaturas"
+        subtitle="Gerencie planos e assinaturas"
+      />
 
-      <main className="px-6 py-8">
-        <div className="max-w-7xl mx-auto">
-          {/* Header */}
-          <div className="mb-8">
-            <h1 className="text-3xl font-bold text-gray-900 mb-2 flex items-center gap-2">
-              <Crown className="w-8 h-8 text-purple-500" />
-              Minha Assinatura
-            </h1>
-            <p className="text-gray-600">Gerencie seu plano e aproveite todos os benefícios</p>
-          </div>
+      <div className="container mx-auto px-4 py-8">
+        <Tabs defaultValue={isAdmin ? "stats" : "my-subscription"} className="space-y-6">
+          <TabsList className="grid w-full grid-cols-4">
+            {isAdmin && <TabsTrigger value="stats">Estatísticas</TabsTrigger>}
+            <TabsTrigger value="my-subscription">Minha Assinatura</TabsTrigger>
+            <TabsTrigger value="plans">Planos</TabsTrigger>
+            <TabsTrigger value="invoices">Faturas</TabsTrigger>
+          </TabsList>
 
-          {/* Status da Assinatura Atual */}
-          <Card className="border-0 shadow-xl bg-gradient-to-br from-purple-600 to-blue-700 text-white rounded-2xl mb-8 overflow-hidden relative">
-            <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -mr-16 -mt-16"></div>
-            <CardContent className="p-8">
-              <div className="flex flex-col md:flex-row md:items-center justify-between">
-                <div className="mb-6 md:mb-0">
-                  <div className="flex items-center gap-3 mb-2">
-                    <Crown className="w-8 h-8" />
-                    <h2 className="text-2xl font-bold">Plano {assinaturaAtual.plano}</h2>
-                    <Badge className={`${getStatusColor(assinaturaAtual.status)} border-0`}>
-                      {assinaturaAtual.status === "ativa" ? "Ativa" : assinaturaAtual.status}
-                    </Badge>
-                  </div>
-                  <p className="text-purple-100 mb-4">
-                    Assinatura desde {new Date(assinaturaAtual.dataInicio).toLocaleDateString("pt-BR")}
-                  </p>
-                  <div className="space-y-2">
-                    <div className="flex items-center gap-2">
-                      <Calendar className="w-4 h-4" />
-                      <span className="text-sm">
-                        Próxima cobrança: {new Date(assinaturaAtual.proximaCobranca).toLocaleDateString("pt-BR")}
-                      </span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <CreditCard className="w-4 h-4" />
-                      <span className="text-sm">{assinaturaAtual.metodoPagamento}</span>
-                    </div>
-                  </div>
+          {/* Estatísticas (Admin) */}
+          {isAdmin && (
+            <TabsContent value="stats" className="space-y-6">
+              {statsLoading ? (
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+                  {[...Array(4)].map((_, i) => (
+                    <Card key={i}>
+                      <CardContent className="p-6">
+                        <Skeleton className="h-4 w-20 mb-2" />
+                        <Skeleton className="h-8 w-16" />
+                      </CardContent>
+                    </Card>
+                  ))}
                 </div>
-                <div className="text-center md:text-right">
-                  <p className="text-purple-100 text-sm mb-1">Valor mensal</p>
-                  <p className="text-4xl font-bold mb-4">R$ {assinaturaAtual.valor.toFixed(2)}</p>
-                  <div className="flex flex-col gap-2">
-                    <Button
-                      variant="secondary"
-                      className="bg-white/20 hover:bg-white/30 text-white border-0"
-                      onClick={() => router.push("/assinatura/historico")}
-                    >
-                      <FileText className="w-4 h-4 mr-2" />
-                      Ver Faturas
-                    </Button>
-                  </div>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Tabs */}
-          <Tabs defaultValue="planos" className="space-y-6">
-            <TabsList className="grid w-full grid-cols-2 bg-white/80 backdrop-blur-sm rounded-2xl p-2 shadow-lg">
-              <TabsTrigger value="planos" className="rounded-xl">
-                Planos Disponíveis
-              </TabsTrigger>
-              <TabsTrigger value="faturas" className="rounded-xl">
-                Histórico de Faturas
-              </TabsTrigger>
-            </TabsList>
-
-            <TabsContent value="planos" className="space-y-6">
-              {/* Comparação de Planos */}
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                {planos.map((plano) => {
-                  const isAtual = plano.nome === assinaturaAtual.plano
-                  const economiaAnual = plano.preco * 12 - plano.precoAnual
-
-                  return (
-                    <Card
-                      key={plano.id}
-                      className={`border-0 shadow-xl rounded-2xl overflow-hidden relative transition-all duration-300 ${
-                        plano.popular ? "ring-2 ring-purple-500 scale-105" : ""
-                      } ${isAtual ? "bg-gradient-to-br from-green-50 to-emerald-50" : "bg-white/90 backdrop-blur-sm"}`}
-                    >
-                      {plano.popular && (
-                        <div className="absolute top-0 left-0 right-0 bg-gradient-to-r from-purple-500 to-pink-500 text-white text-center py-2 text-sm font-semibold">
-                          ⭐ Mais Popular
-                        </div>
-                      )}
-
-                      {isAtual && (
-                        <div className="absolute top-0 left-0 right-0 bg-gradient-to-r from-green-500 to-emerald-500 text-white text-center py-2 text-sm font-semibold">
-                          ✓ Plano Atual
-                        </div>
-                      )}
-
-                      <CardHeader className={`${plano.popular || isAtual ? "pt-12" : "pt-6"} pb-4`}>
-                        <div className="text-center">
-                          <CardTitle className="text-2xl font-bold text-gray-900 mb-2">{plano.nome}</CardTitle>
-                          <CardDescription className="text-gray-600 mb-4">{plano.descricao}</CardDescription>
-                          <div className="mb-4">
-                            <div className="flex items-baseline justify-center gap-1">
-                              <span className="text-4xl font-bold text-gray-900">R$ {plano.preco.toFixed(2)}</span>
-                              <span className="text-gray-600">/mês</span>
-                            </div>
-                            <div className="mt-2 text-sm text-gray-600">
-                              <p>ou R$ {plano.precoAnual.toFixed(2)}/ano</p>
-                              <p className="text-green-600 font-medium">Economize R$ {economiaAnual.toFixed(2)}</p>
-                            </div>
-                          </div>
-                        </div>
-                      </CardHeader>
-
-                      <CardContent className="space-y-6">
-                        {/* Recursos Inclusos */}
-                        <div>
-                          <h4 className="font-semibold text-gray-900 mb-3 flex items-center gap-2">
-                            <Check className="w-4 h-4 text-green-500" />
-                            Recursos Inclusos
-                          </h4>
-                          <ul className="space-y-2">
-                            {plano.recursos.map((recurso, index) => (
-                              <li key={index} className="flex items-center gap-2 text-sm">
-                                <Check className="w-4 h-4 text-green-500 flex-shrink-0" />
-                                <span>{recurso}</span>
-                              </li>
-                            ))}
-                          </ul>
-                        </div>
-
-                        {/* Limitações */}
-                        {plano.limitacoes.length > 0 && (
+              ) : stats ? (
+                <>
+                  <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+                    <Card>
+                      <CardContent className="p-6">
+                        <div className="flex items-center justify-between">
                           <div>
-                            <h4 className="font-semibold text-gray-900 mb-3 flex items-center gap-2">
-                              <X className="w-4 h-4 text-red-500" />
-                              Não Inclui
-                            </h4>
-                            <ul className="space-y-2">
-                              {plano.limitacoes.map((limitacao, index) => (
-                                <li key={index} className="flex items-center gap-2 text-sm text-gray-600">
-                                  <X className="w-4 h-4 text-red-500 flex-shrink-0" />
-                                  <span>{limitacao}</span>
-                                </li>
-                              ))}
-                            </ul>
+                            <p className="text-sm font-medium text-gray-600">Total de Assinaturas</p>
+                            <p className="text-2xl font-bold">{stats.totalSubscriptions}</p>
                           </div>
-                        )}
-
-                        {/* Botão de Ação */}
-                        <div className="pt-4">
-                          {isAtual ? (
-                            <Button disabled className="w-full h-12 bg-green-500 text-white rounded-xl">
-                              <Check className="w-5 h-5 mr-2" />
-                              Plano Atual
-                            </Button>
-                          ) : (
-                            <Button
-                              onClick={() => handleUpgrade(plano.id)}
-                              className={`w-full h-12 bg-gradient-to-r ${plano.cor} hover:opacity-90 text-white rounded-xl`}
-                            >
-                              {plano.preco > assinaturaAtual.valor ? (
-                                <>
-                                  <TrendingUp className="w-5 h-5 mr-2" />
-                                  Fazer Upgrade
-                                </>
-                              ) : (
-                                <>
-                                  <Crown className="w-5 h-5 mr-2" />
-                                  Selecionar Plano
-                                </>
-                              )}
-                            </Button>
-                          )}
+                          <Users className="h-8 w-8 text-blue-600" />
                         </div>
                       </CardContent>
                     </Card>
-                  )
-                })}
-              </div>
 
-              {/* Ações da Assinatura */}
-              <Card className="border-0 shadow-xl bg-white/80 backdrop-blur-sm rounded-2xl">
+                    <Card>
+                      <CardContent className="p-6">
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <p className="text-sm font-medium text-gray-600">Assinaturas Ativas</p>
+                            <p className="text-2xl font-bold text-green-600">{stats.activeSubscriptions}</p>
+                          </div>
+                          <Check className="h-8 w-8 text-green-600" />
+                        </div>
+                      </CardContent>
+                    </Card>
+
+                    <Card>
+                      <CardContent className="p-6">
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <p className="text-sm font-medium text-gray-600">Receita Total</p>
+                            <p className="text-2xl font-bold text-green-600">{formatCurrency(stats.totalRevenue)}</p>
+                          </div>
+                          <DollarSign className="h-8 w-8 text-green-600" />
+                        </div>
+                      </CardContent>
+                    </Card>
+
+                    <Card>
+                      <CardContent className="p-6">
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <p className="text-sm font-medium text-gray-600">Receita Mensal</p>
+                            <p className="text-2xl font-bold text-blue-600">{formatCurrency(stats.monthlyRevenue)}</p>
+                          </div>
+                          <TrendingUp className="h-8 w-8 text-blue-600" />
+                        </div>
+                      </CardContent>
+                    </Card>
+                  </div>
+
+                  <Card>
+                    <CardHeader>
+                      <CardTitle>Distribuição de Planos</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="space-y-4">
+                        {stats.planDistribution.map((plan, index) => (
+                          <div key={index} className="flex items-center justify-between">
+                            <div className="flex items-center space-x-3">
+                              <div className="w-4 h-4 bg-blue-600 rounded-full" />
+                              <span className="font-medium">{plan.planName}</span>
+                            </div>
+                            <div className="flex items-center space-x-3">
+                              <span className="text-sm text-gray-600">{plan.count} assinaturas</span>
+                              <Badge variant="outline">{plan.percentage.toFixed(1)}%</Badge>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </CardContent>
+                  </Card>
+                </>
+              ) : (
+                <Card>
+                  <CardContent className="p-6 text-center">
+                    <AlertCircle className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                    <p className="text-gray-600">Erro ao carregar estatísticas</p>
+                  </CardContent>
+                </Card>
+              )}
+            </TabsContent>
+          )}
+
+          {/* Minha Assinatura */}
+          <TabsContent value="my-subscription" className="space-y-6">
+            {subscriptionLoading ? (
+              <Card>
+                <CardContent className="p-6">
+                  <Skeleton className="h-6 w-48 mb-4" />
+                  <Skeleton className="h-4 w-full mb-2" />
+                  <Skeleton className="h-4 w-3/4" />
+                </CardContent>
+              </Card>
+            ) : subscription ? (
+              <Card>
                 <CardHeader>
-                  <CardTitle className="text-xl font-bold text-gray-900 flex items-center gap-2">
-                    <Shield className="w-5 h-5 text-blue-500" />
-                    Gerenciar Assinatura
-                  </CardTitle>
-                  <CardDescription className="text-gray-600">
-                    Opções para modificar ou cancelar sua assinatura
-                  </CardDescription>
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <CardTitle className="flex items-center gap-2">
+                        {subscription.plan?.name}
+                        {subscription.plan?.isPopular && <Star className="h-5 w-5 text-yellow-500" />}
+                      </CardTitle>
+                      <CardDescription>{subscription.plan?.description}</CardDescription>
+                    </div>
+                    {getStatusBadge(subscription.status)}
+                  </div>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <Button
-                      variant="outline"
-                      className="h-12 border-2 border-blue-200 text-blue-600 hover:bg-blue-50 rounded-xl bg-transparent"
-                      onClick={() => router.push("/assinatura/alterar-pagamento")}
-                    >
-                      <CreditCard className="w-5 h-5 mr-2" />
-                      Alterar Pagamento
-                    </Button>
-
-                    <Button
-                      variant="outline"
-                      className="h-12 border-2 border-yellow-200 text-yellow-600 hover:bg-yellow-50 rounded-xl bg-transparent"
-                      onClick={handleDowngrade}
-                    >
-                      <TrendingUp className="w-5 h-5 mr-2 rotate-180" />
-                      Fazer Downgrade
-                    </Button>
-
-                    <Button
-                      variant="outline"
-                      className="h-12 border-2 border-red-200 text-red-600 hover:bg-red-50 rounded-xl bg-transparent"
-                      onClick={handleCancelar}
-                    >
-                      <X className="w-5 h-5 mr-2" />
-                      Cancelar Assinatura
-                    </Button>
-                  </div>
-
-                  <div className="bg-blue-50 border border-blue-200 rounded-xl p-4">
-                    <div className="flex items-start gap-3">
-                      <AlertCircle className="w-5 h-5 text-blue-500 flex-shrink-0 mt-0.5" />
-                      <div>
-                        <h4 className="font-semibold text-blue-900 mb-1">Informações Importantes</h4>
-                        <ul className="text-sm text-blue-800 space-y-1">
-                          <li>• Upgrades são aplicados imediatamente</li>
-                          <li>• Downgrades entram em vigor no próximo ciclo</li>
-                          <li>• Cancelamentos podem ser feitos até 24h antes da cobrança</li>
-                          <li>• Reembolsos seguem nossa política de 7 dias</li>
-                        </ul>
-                      </div>
+                    <div>
+                      <p className="text-sm font-medium text-gray-600">Preço</p>
+                      <p className="text-lg font-bold">{formatCurrency(subscription.price)}</p>
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium text-gray-600">Início</p>
+                      <p className="text-lg">{formatDate(subscription.startDate)}</p>
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium text-gray-600">Vencimento</p>
+                      <p className="text-lg">{formatDate(subscription.endDate)}</p>
                     </div>
                   </div>
-                </CardContent>
-              </Card>
-            </TabsContent>
 
-            <TabsContent value="faturas" className="space-y-6">
-              <Card className="border-0 shadow-xl bg-white/80 backdrop-blur-sm rounded-2xl">
-                <CardHeader>
-                  <CardTitle className="text-xl font-bold text-gray-900 flex items-center gap-2">
-                    <FileText className="w-5 h-5 text-green-500" />
-                    Histórico de Faturas
-                  </CardTitle>
-                  <CardDescription className="text-gray-600">
-                    Todas as suas faturas e comprovantes de pagamento
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  {faturas.map((fatura) => (
-                    <div key={fatura.id} className="p-4 bg-gray-50 rounded-xl">
-                      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-                        <div className="flex items-center gap-4">
-                          <div className="w-12 h-12 bg-green-100 rounded-xl flex items-center justify-center">
-                            <FileText className="w-6 h-6 text-green-600" />
+                  {subscription.plan?.features && (
+                    <div>
+                      <p className="text-sm font-medium text-gray-600 mb-2">Recursos Inclusos</p>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                        {subscription.plan.features.map((feature, index) => (
+                          <div key={index} className="flex items-center gap-2">
+                            <Check className="h-4 w-4 text-green-600" />
+                            <span className="text-sm">{feature}</span>
                           </div>
-                          <div>
-                            <h4 className="font-semibold text-gray-900">Fatura {fatura.periodo}</h4>
-                            <p className="text-sm text-gray-600">{new Date(fatura.data).toLocaleDateString("pt-BR")}</p>
-                            <p className="text-sm text-gray-600">{fatura.metodo}</p>
-                          </div>
-                        </div>
-
-                        <div className="flex items-center gap-4">
-                          <div className="text-right">
-                            <p className="font-bold text-gray-900">R$ {fatura.valor.toFixed(2)}</p>
-                            <Badge className={`${getFaturaStatusColor(fatura.status)} border-0`}>
-                              {fatura.status === "paga" ? "Paga" : fatura.status}
-                            </Badge>
-                          </div>
-
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            className="border-2 border-gray-200 hover:bg-gray-50 rounded-lg bg-transparent"
-                          >
-                            <Download className="w-4 h-4 mr-1" />
-                            PDF
-                          </Button>
-                        </div>
+                        ))}
                       </div>
                     </div>
-                  ))}
+                  )}
 
-                  {faturas.length === 0 && (
-                    <div className="text-center py-8">
-                      <FileText className="w-12 h-12 text-gray-400 mx-auto mb-3" />
-                      <p className="text-gray-600">Nenhuma fatura encontrada</p>
+                  <div className="flex gap-2 pt-4">
+                    {subscription.status === "active" ? (
+                      <AlertDialog>
+                        <AlertDialogTrigger asChild>
+                          <Button variant="destructive">Cancelar Assinatura</Button>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent>
+                          <AlertDialogHeader>
+                            <AlertDialogTitle>Cancelar Assinatura</AlertDialogTitle>
+                            <AlertDialogDescription>
+                              Tem certeza que deseja cancelar sua assinatura? Você perderá acesso aos recursos premium.
+                            </AlertDialogDescription>
+                          </AlertDialogHeader>
+                          <AlertDialogFooter>
+                            <AlertDialogCancel>Não, manter</AlertDialogCancel>
+                            <AlertDialogAction onClick={() => cancelSubscription()}>Sim, cancelar</AlertDialogAction>
+                          </AlertDialogFooter>
+                        </AlertDialogContent>
+                      </AlertDialog>
+                    ) : (
+                      <Button onClick={() => reactivateSubscription()}>Reativar Assinatura</Button>
+                    )}
+                  </div>
+
+                  {!canChangePlan.canChange && (
+                    <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+                      <div className="flex items-center gap-2">
+                        <AlertCircle className="h-5 w-5 text-yellow-600" />
+                        <p className="text-sm text-yellow-800">
+                          {canChangePlan.reason}
+                          {canChangePlan.nextChangeDate && (
+                            <span className="block mt-1">
+                              Próxima alteração disponível em: {formatDate(canChangePlan.nextChangeDate)}
+                            </span>
+                          )}
+                        </p>
+                      </div>
                     </div>
                   )}
                 </CardContent>
               </Card>
-            </TabsContent>
-          </Tabs>
-        </div>
-      </main>
+            ) : (
+              <Card>
+                <CardContent className="p-6 text-center">
+                  <CreditCard className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                  <h3 className="text-lg font-semibold mb-2">Nenhuma assinatura ativa</h3>
+                  <p className="text-gray-600 mb-4">Escolha um plano para começar a usar todos os recursos.</p>
+                  <Button onClick={() => document.querySelector('[data-value="plans"]')?.click()}>
+                    Ver Planos Disponíveis
+                  </Button>
+                </CardContent>
+              </Card>
+            )}
+          </TabsContent>
 
-      <FloatingButtons />
+          {/* Planos */}
+          <TabsContent value="plans" className="space-y-6">
+            <div className="flex justify-between items-center">
+              <div>
+                <h2 className="text-2xl font-bold">Planos Disponíveis</h2>
+                <p className="text-gray-600">Escolha o plano ideal para suas necessidades</p>
+              </div>
+              {isAdmin && (
+                <Dialog open={isCreatePlanOpen} onOpenChange={setIsCreatePlanOpen}>
+                  <DialogTrigger asChild>
+                    <Button>
+                      <Plus className="h-4 w-4 mr-2" />
+                      Criar Plano
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent className="max-w-2xl">
+                    <DialogHeader>
+                      <DialogTitle>Criar Novo Plano</DialogTitle>
+                      <DialogDescription>Preencha os dados do novo plano de assinatura</DialogDescription>
+                    </DialogHeader>
+                    <PlanForm onSave={createPlan} onClose={() => setIsCreatePlanOpen(false)} />
+                  </DialogContent>
+                </Dialog>
+              )}
+            </div>
+
+            {plansLoading ? (
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                {[...Array(3)].map((_, i) => (
+                  <Card key={i}>
+                    <CardContent className="p-6">
+                      <Skeleton className="h-6 w-32 mb-2" />
+                      <Skeleton className="h-4 w-full mb-4" />
+                      <Skeleton className="h-8 w-20 mb-4" />
+                      <div className="space-y-2">
+                        <Skeleton className="h-4 w-full" />
+                        <Skeleton className="h-4 w-3/4" />
+                        <Skeleton className="h-4 w-1/2" />
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                {plans
+                  .filter((plan) => plan.isActive || isAdmin)
+                  .map((plan) => (
+                    <Card key={plan.id} className={`relative ${plan.isPopular ? "border-2 border-blue-500" : ""}`}>
+                      {plan.isPopular && (
+                        <div className="absolute -top-3 left-1/2 transform -translate-x-1/2">
+                          <Badge className="bg-blue-500 text-white">
+                            <Star className="h-3 w-3 mr-1" />
+                            Mais Popular
+                          </Badge>
+                        </div>
+                      )}
+
+                      <CardHeader>
+                        <div className="flex items-center justify-between">
+                          <CardTitle className="flex items-center gap-2">
+                            {plan.name}
+                            {!plan.isActive && <Badge variant="secondary">Inativo</Badge>}
+                          </CardTitle>
+                          {isAdmin && (
+                            <div className="flex gap-1">
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                onClick={() => {
+                                  setEditingPlan(plan)
+                                  setIsEditPlanOpen(true)
+                                }}
+                              >
+                                <Edit className="h-4 w-4" />
+                              </Button>
+                              <Button size="sm" variant="ghost" onClick={() => togglePlanStatus(plan.id)}>
+                                {plan.isActive ? <X className="h-4 w-4" /> : <Check className="h-4 w-4" />}
+                              </Button>
+                              <AlertDialog>
+                                <AlertDialogTrigger asChild>
+                                  <Button size="sm" variant="ghost">
+                                    <Trash2 className="h-4 w-4" />
+                                  </Button>
+                                </AlertDialogTrigger>
+                                <AlertDialogContent>
+                                  <AlertDialogHeader>
+                                    <AlertDialogTitle>Excluir Plano</AlertDialogTitle>
+                                    <AlertDialogDescription>
+                                      Tem certeza que deseja excluir o plano "{plan.name}"? Esta ação não pode ser
+                                      desfeita.
+                                    </AlertDialogDescription>
+                                  </AlertDialogHeader>
+                                  <AlertDialogFooter>
+                                    <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                                    <AlertDialogAction onClick={() => deletePlan(plan.id)}>Excluir</AlertDialogAction>
+                                  </AlertDialogFooter>
+                                </AlertDialogContent>
+                              </AlertDialog>
+                            </div>
+                          )}
+                        </div>
+                        <CardDescription>{plan.description}</CardDescription>
+                      </CardHeader>
+
+                      <CardContent className="space-y-4">
+                        <div className="text-center">
+                          <div className="text-3xl font-bold">{formatCurrency(plan.price)}</div>
+                          <div className="text-sm text-gray-600">por {plan.duration} dias</div>
+                        </div>
+
+                        {plan.features && plan.features.length > 0 && (
+                          <div className="space-y-2">
+                            {plan.features.map((feature, index) => (
+                              <div key={index} className="flex items-center gap-2">
+                                <Check className="h-4 w-4 text-green-600 flex-shrink-0" />
+                                <span className="text-sm">{feature}</span>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+
+                        {(plan.maxUsers || plan.maxPets || plan.maxServices) && (
+                          <div className="border-t pt-4 space-y-1">
+                            {plan.maxUsers && (
+                              <div className="text-sm text-gray-600">Máx. {plan.maxUsers} usuários</div>
+                            )}
+                            {plan.maxPets && <div className="text-sm text-gray-600">Máx. {plan.maxPets} pets</div>}
+                            {plan.maxServices && (
+                              <div className="text-sm text-gray-600">Máx. {plan.maxServices} serviços</div>
+                            )}
+                          </div>
+                        )}
+
+                        {!isAdmin && plan.isActive && (
+                          <div className="pt-4">
+                            {subscription?.planId === plan.id ? (
+                              <Button disabled className="w-full">
+                                <Check className="h-4 w-4 mr-2" />
+                                Plano Atual
+                              </Button>
+                            ) : subscription ? (
+                              <Button
+                                onClick={() => handleChangePlan(plan.id)}
+                                disabled={!canChangePlan.canChange}
+                                className="w-full"
+                              >
+                                Alterar para este Plano
+                              </Button>
+                            ) : (
+                              <Button onClick={() => handleCreateSubscription(plan.id)} className="w-full">
+                                Assinar Agora
+                              </Button>
+                            )}
+                          </div>
+                        )}
+                      </CardContent>
+                    </Card>
+                  ))}
+              </div>
+            )}
+
+            {/* Dialog para editar plano */}
+            <Dialog open={isEditPlanOpen} onOpenChange={setIsEditPlanOpen}>
+              <DialogContent className="max-w-2xl">
+                <DialogHeader>
+                  <DialogTitle>Editar Plano</DialogTitle>
+                  <DialogDescription>Atualize os dados do plano de assinatura</DialogDescription>
+                </DialogHeader>
+                <PlanForm
+                  plan={editingPlan}
+                  onSave={(data) => editingPlan && updatePlan(editingPlan.id, data)}
+                  onClose={() => {
+                    setIsEditPlanOpen(false)
+                    setEditingPlan(null)
+                  }}
+                />
+              </DialogContent>
+            </Dialog>
+          </TabsContent>
+
+          {/* Faturas */}
+          <TabsContent value="invoices" className="space-y-6">
+            <div>
+              <h2 className="text-2xl font-bold">Faturas</h2>
+              <p className="text-gray-600">Histórico de pagamentos e faturas</p>
+            </div>
+
+            {invoicesLoading ? (
+              <Card>
+                <CardContent className="p-6">
+                  <div className="space-y-4">
+                    {[...Array(5)].map((_, i) => (
+                      <div key={i} className="flex items-center justify-between">
+                        <div className="space-y-2">
+                          <Skeleton className="h-4 w-32" />
+                          <Skeleton className="h-3 w-24" />
+                        </div>
+                        <Skeleton className="h-8 w-20" />
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            ) : invoices.length > 0 ? (
+              <Card>
+                <CardContent className="p-0">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Descrição</TableHead>
+                        <TableHead>Valor</TableHead>
+                        <TableHead>Vencimento</TableHead>
+                        <TableHead>Status</TableHead>
+                        <TableHead>Ações</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {invoices.map((invoice) => (
+                        <TableRow key={invoice.id}>
+                          <TableCell>
+                            <div>
+                              <p className="font-medium">{invoice.description}</p>
+                              <p className="text-sm text-gray-600">{formatDate(invoice.createdAt)}</p>
+                            </div>
+                          </TableCell>
+                          <TableCell className="font-medium">{formatCurrency(invoice.amount)}</TableCell>
+                          <TableCell>{formatDate(invoice.dueDate)}</TableCell>
+                          <TableCell>{getStatusBadge(invoice.status)}</TableCell>
+                          <TableCell>
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              onClick={() => downloadInvoice(invoice.id, `fatura-${invoice.id}.pdf`)}
+                            >
+                              <Download className="h-4 w-4" />
+                            </Button>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </CardContent>
+              </Card>
+            ) : (
+              <Card>
+                <CardContent className="p-6 text-center">
+                  <FileText className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                  <h3 className="text-lg font-semibold mb-2">Nenhuma fatura encontrada</h3>
+                  <p className="text-gray-600">Suas faturas aparecerão aqui quando disponíveis.</p>
+                </CardContent>
+              </Card>
+            )}
+          </TabsContent>
+        </Tabs>
+      </div>
     </div>
   )
 }
