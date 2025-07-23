@@ -1,342 +1,866 @@
 "use client"
 
-import type React from "react"
-
 import { useState } from "react"
-import { useAuth } from "@/hooks/use-auth"
+import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Checkbox } from "@/components/ui/checkbox"
-import { Eye, EyeOff, ArrowLeft, Heart, Mail, Lock, User, Building, Phone } from "lucide-react"
-import Image from "next/image"
-import Link from "next/link"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Card, CardContent } from "@/components/ui/card"
+import { Separator } from "@/components/ui/separator"
+import { Eye, EyeOff, ArrowLeft, User, Building, Truck, Users, Shield } from "lucide-react"
+import { toast } from "@/hooks/use-toast"
+
+// Tipos para o formulário
+interface BaseFormData {
+  name: string
+  email: string
+  password: string
+  confirmPassword: string
+  phone: string
+  document: string
+  address: {
+    street: string
+    number: string
+    complement: string
+    neighborhood: string
+    city: string
+    state: string
+    zipCode: string
+  }
+}
+
+interface ClientFormData extends BaseFormData {
+  userType: "cliente"
+  birthDate: string
+}
+
+interface PetshopFormData extends BaseFormData {
+  userType: "petshop"
+  companyName: string
+  cnpj: string
+  businessHours: string
+  services: string[]
+}
+
+interface SupplierFormData extends BaseFormData {
+  userType: "fornecedor"
+  companyName: string
+  cnpj: string
+  businessArea: string
+  products: string[]
+}
+
+interface CompanyFormData extends BaseFormData {
+  userType: "empresa"
+  companyName: string
+  cnpj: string
+  businessArea: string
+  employeeCount: string
+}
+
+type FormData = ClientFormData | PetshopFormData | SupplierFormData | CompanyFormData
+
+// Estado do formulário com campos opcionais
+interface FormState {
+  name?: string
+  email?: string
+  password?: string
+  confirmPassword?: string
+  phone?: string
+  document?: string
+  userType?: "cliente" | "petshop" | "fornecedor" | "empresa"
+  birthDate?: string
+  companyName?: string
+  cnpj?: string
+  businessHours?: string
+  services?: string[]
+  businessArea?: string
+  products?: string[]
+  employeeCount?: string
+  address?: {
+    street?: string
+    number?: string
+    complement?: string
+    neighborhood?: string
+    city?: string
+    state?: string
+    zipCode?: string
+  }
+}
 
 export default function CadastroPage() {
-  const { register, loading } = useAuth()
+  const router = useRouter()
+  const [currentStep, setCurrentStep] = useState(1)
   const [showPassword, setShowPassword] = useState(false)
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
   const [acceptTerms, setAcceptTerms] = useState(false)
-  const [formData, setFormData] = useState({
+  const [loading, setLoading] = useState(false)
+
+  const [formData, setFormData] = useState<FormState>({
     name: "",
     email: "",
-    phone: "",
     password: "",
     confirmPassword: "",
-    userType: "",
-    document: "", // CPF ou CNPJ
-    companyName: "", // Para empresas
+    phone: "",
+    document: "",
+    userType: "cliente",
+    birthDate: "",
+    companyName: "",
+    cnpj: "",
+    businessHours: "",
+    services: [],
+    businessArea: "",
+    products: [],
+    employeeCount: "",
+    address: {
+      street: "",
+      number: "",
+      complement: "",
+      neighborhood: "",
+      city: "",
+      state: "",
+      zipCode: "",
+    },
   })
 
-  const handleInputChange = (field: string, value: string) => {
+  const userTypes = [
+    { value: "cliente", label: "Cliente", icon: User, description: "Pessoa física que busca serviços para pets" },
+    {
+      value: "petshop",
+      label: "Petshop",
+      icon: Building,
+      description: "Estabelecimento que oferece serviços para pets",
+    },
+    {
+      value: "fornecedor",
+      label: "Fornecedor",
+      icon: Truck,
+      description: "Empresa que fornece produtos para petshops",
+    },
+    { value: "empresa", label: "Empresa", icon: Users, description: "Empresa que busca parcerias corporativas" },
+  ]
+
+  const handleInputChange = (field: keyof FormState, value: string) => {
     setFormData((prev) => ({
       ...prev,
       [field]: value,
     }))
   }
 
-  const handleRegister = async (e: React.FormEvent) => {
-    e.preventDefault()
+  const handleArrayChange = (field: keyof FormState, value: string[]) => {
+    setFormData((prev) => ({
+      ...prev,
+      [field]: value,
+    }))
+  }
 
-    // Validações
-    if (formData.password !== formData.confirmPassword) {
-      return
-    }
+  const handleAddressChange = (field: string, value: string) => {
+    setFormData((prev) => ({
+      ...prev,
+      address: {
+        ...prev.address,
+        [field]: value,
+      },
+    }))
+  }
 
-    if (!acceptTerms) {
-      return
-    }
+  const handleServiceToggle = (service: string) => {
+    setFormData((prev) => ({
+      ...prev,
+      services: prev.services?.includes(service)
+        ? prev.services.filter((s) => s !== service)
+        : [...(prev.services || []), service],
+    }))
+  }
 
-    try {
-      await register({
-        name: formData.name,
-        email: formData.email,
-        phone: formData.phone,
-        password: formData.password,
-        userType: formData.userType as any,
-        document: formData.document,
-      })
-    } catch (error) {
-      // Error já tratado no hook
+  const handleProductToggle = (product: string) => {
+    setFormData((prev) => ({
+      ...prev,
+      products: prev.products?.includes(product)
+        ? prev.products.filter((p) => p !== product)
+        : [...(prev.products || []), product],
+    }))
+  }
+
+  const validateStep = (step: number): boolean => {
+    switch (step) {
+      case 1:
+        return !!formData.userType
+      case 2:
+        return !!(formData.name && formData.email && formData.password && formData.confirmPassword && formData.phone)
+      case 3:
+        if (formData.userType === "cliente") {
+          return !!(formData.document && formData.birthDate)
+        } else {
+          return !!(formData.companyName && formData.cnpj && formData.document)
+        }
+      case 4:
+        return !!(
+          formData.address?.street &&
+          formData.address?.number &&
+          formData.address?.neighborhood &&
+          formData.address?.city &&
+          formData.address?.state &&
+          formData.address?.zipCode
+        )
+      case 5:
+        return acceptTerms
+      default:
+        return false
     }
   }
 
-  const isCompanyType = ["petshop", "fornecedor", "empresa"].includes(formData.userType)
+  const nextStep = () => {
+    if (validateStep(currentStep)) {
+      setCurrentStep((prev) => Math.min(prev + 1, 5))
+    } else {
+      toast({
+        title: "Campos obrigatórios",
+        description: "Por favor, preencha todos os campos obrigatórios antes de continuar.",
+        variant: "destructive",
+      })
+    }
+  }
 
-  const isFormValid =
-    formData.name &&
-    formData.email &&
-    formData.password &&
-    formData.confirmPassword &&
-    formData.userType &&
-    formData.document &&
-    (isCompanyType ? formData.companyName : true) &&
-    acceptTerms &&
-    formData.password === formData.confirmPassword
+  const prevStep = () => {
+    setCurrentStep((prev) => Math.max(prev - 1, 1))
+  }
 
-  return (
-    <div className="min-h-screen bg-gradient-to-br from-[#D6DD83]/30 via-[#FFBDB6]/30 to-[#30B2B0]/30 flex items-center justify-center p-4">
-      <div className="w-full max-w-md">
-        {/* Header */}
-        <div className="flex items-center gap-4 mb-6">
-          <Link href="/">
-            <Button variant="ghost" size="icon" className="hover:bg-white/50 rounded-xl">
-              <ArrowLeft className="h-5 w-5 text-gray-700" />
-            </Button>
-          </Link>
-          <div className="flex items-center gap-3">
-            <div className="w-12 h-12 bg-gradient-to-br from-bpet-primary to-bpet-secondary rounded-xl flex items-center justify-center shadow-lg">
-              <Image src="/bpet-logo.png" alt="BPet Logo" width={24} height={24} className="rounded-lg" />
+  const handleSubmit = async () => {
+    if (!validateStep(5)) {
+      toast({
+        title: "Erro",
+        description: "Por favor, aceite os termos de uso para continuar.",
+        variant: "destructive",
+      })
+      return
+    }
+
+    if (formData.password !== formData.confirmPassword) {
+      toast({
+        title: "Erro",
+        description: "As senhas não coincidem.",
+        variant: "destructive",
+      })
+      return
+    }
+
+    setLoading(true)
+
+    try {
+      // Simular chamada da API
+      await new Promise((resolve) => setTimeout(resolve, 2000))
+
+      toast({
+        title: "Sucesso!",
+        description: "Conta criada com sucesso! Verifique seu email para ativar a conta.",
+      })
+
+      router.push("/")
+    } catch (error) {
+      console.error("Erro ao criar conta:", error)
+      toast({
+        title: "Erro",
+        description: "Erro ao criar conta. Tente novamente.",
+        variant: "destructive",
+      })
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const renderStepContent = () => {
+    switch (currentStep) {
+      case 1:
+        return (
+          <div className="space-y-6">
+            <div className="text-center">
+              <h2 className="text-2xl font-bold text-gray-900 mb-2">Escolha o tipo de conta</h2>
+              <p className="text-gray-600">Selecione a opção que melhor descreve você</p>
             </div>
-            <div>
-              <h1 className="text-2xl font-bold text-gray-900">Criar Conta</h1>
-              <p className="text-sm text-gray-600">Junte-se à nossa comunidade</p>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {userTypes.map((type) => {
+                const Icon = type.icon
+                return (
+                  <Card
+                    key={type.value}
+                    className={`cursor-pointer transition-all duration-200 hover:shadow-lg ${
+                      formData.userType === type.value
+                        ? "ring-2 ring-[#30B2B0] bg-[#30B2B0]/5"
+                        : "hover:ring-1 hover:ring-gray-300"
+                    }`}
+                    onClick={() => handleInputChange("userType", type.value)}
+                  >
+                    <CardContent className="p-6">
+                      <div className="flex items-start space-x-4">
+                        <div
+                          className={`p-3 rounded-xl ${
+                            formData.userType === type.value ? "bg-[#30B2B0] text-white" : "bg-gray-100 text-gray-600"
+                          }`}
+                        >
+                          <Icon className="w-6 h-6" />
+                        </div>
+                        <div className="flex-1">
+                          <h3 className="font-semibold text-gray-900 mb-1">{type.label}</h3>
+                          <p className="text-sm text-gray-600">{type.description}</p>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                )
+              })}
             </div>
           </div>
-        </div>
+        )
 
-        {/* Card de Cadastro */}
-        <Card className="border-0 shadow-2xl bg-white/90 backdrop-blur-sm rounded-2xl">
-          <CardHeader className="text-center pb-2">
-            <CardTitle className="text-xl font-bold text-gray-900">Cadastro</CardTitle>
-            <CardDescription className="text-gray-600">Preencha os dados para criar sua conta</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <form onSubmit={handleRegister} className="space-y-4">
-              {/* Tipo de Usuário */}
+      case 2:
+        return (
+          <div className="space-y-6">
+            <div className="text-center">
+              <h2 className="text-2xl font-bold text-gray-900 mb-2">Informações básicas</h2>
+              <p className="text-gray-600">Preencha seus dados pessoais</p>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="space-y-2">
-                <Label htmlFor="userType" className="text-sm font-medium text-gray-700">
-                  Eu sou: *
-                </Label>
+                <Label htmlFor="name">Nome completo *</Label>
+                <Input
+                  id="name"
+                  value={formData.name || ""}
+                  onChange={(e) => handleInputChange("name", e.target.value)}
+                  placeholder="Seu nome completo"
+                  className="h-12"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="phone">Telefone *</Label>
+                <Input
+                  id="phone"
+                  value={formData.phone || ""}
+                  onChange={(e) => handleInputChange("phone", e.target.value)}
+                  placeholder="(11) 99999-9999"
+                  className="h-12"
+                />
+              </div>
+
+              <div className="space-y-2 md:col-span-2">
+                <Label htmlFor="email">Email *</Label>
+                <Input
+                  id="email"
+                  type="email"
+                  value={formData.email || ""}
+                  onChange={(e) => handleInputChange("email", e.target.value)}
+                  placeholder="seu@email.com"
+                  className="h-12"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="password">Senha *</Label>
+                <div className="relative">
+                  <Input
+                    id="password"
+                    type={showPassword ? "text" : "password"}
+                    value={formData.password || ""}
+                    onChange={(e) => handleInputChange("password", e.target.value)}
+                    placeholder="Sua senha"
+                    className="h-12 pr-12"
+                  />
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    className="absolute right-0 top-0 h-12 w-12"
+                    onClick={() => setShowPassword(!showPassword)}
+                  >
+                    {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                  </Button>
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="confirmPassword">Confirmar senha *</Label>
+                <div className="relative">
+                  <Input
+                    id="confirmPassword"
+                    type={showConfirmPassword ? "text" : "password"}
+                    value={formData.confirmPassword || ""}
+                    onChange={(e) => handleInputChange("confirmPassword", e.target.value)}
+                    placeholder="Confirme sua senha"
+                    className="h-12 pr-12"
+                  />
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    className="absolute right-0 top-0 h-12 w-12"
+                    onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                  >
+                    {showConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                  </Button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )
+
+      case 3:
+        return (
+          <div className="space-y-6">
+            <div className="text-center">
+              <h2 className="text-2xl font-bold text-gray-900 mb-2">
+                {formData.userType === "cliente" ? "Dados pessoais" : "Dados da empresa"}
+              </h2>
+              <p className="text-gray-600">
+                {formData.userType === "cliente"
+                  ? "Informações adicionais sobre você"
+                  : "Informações sobre sua empresa"}
+              </p>
+            </div>
+
+            {formData.userType === "cliente" ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="space-y-2">
+                  <Label htmlFor="document">CPF *</Label>
+                  <Input
+                    id="document"
+                    value={formData.document || ""}
+                    onChange={(e) => handleInputChange("document", e.target.value)}
+                    placeholder="000.000.000-00"
+                    className="h-12"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="birthDate">Data de nascimento *</Label>
+                  <Input
+                    id="birthDate"
+                    type="date"
+                    value={formData.birthDate || ""}
+                    onChange={(e) => handleInputChange("birthDate", e.target.value)}
+                    className="h-12"
+                  />
+                </div>
+              </div>
+            ) : (
+              <div className="space-y-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="space-y-2">
+                    <Label htmlFor="companyName">Nome da empresa *</Label>
+                    <Input
+                      id="companyName"
+                      value={formData.companyName || ""}
+                      onChange={(e) => handleInputChange("companyName", e.target.value)}
+                      placeholder="Nome da sua empresa"
+                      className="h-12"
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="cnpj">CNPJ *</Label>
+                    <Input
+                      id="cnpj"
+                      value={formData.cnpj || ""}
+                      onChange={(e) => handleInputChange("cnpj", e.target.value)}
+                      placeholder="00.000.000/0000-00"
+                      className="h-12"
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="document">CPF do responsável *</Label>
+                    <Input
+                      id="document"
+                      value={formData.document || ""}
+                      onChange={(e) => handleInputChange("document", e.target.value)}
+                      placeholder="000.000.000-00"
+                      className="h-12"
+                    />
+                  </div>
+
+                  {formData.userType === "petshop" && (
+                    <div className="space-y-2">
+                      <Label htmlFor="businessHours">Horário de funcionamento</Label>
+                      <Input
+                        id="businessHours"
+                        value={formData.businessHours || ""}
+                        onChange={(e) => handleInputChange("businessHours", e.target.value)}
+                        placeholder="Ex: Seg-Sex 8h-18h, Sáb 8h-12h"
+                        className="h-12"
+                      />
+                    </div>
+                  )}
+
+                  {(formData.userType === "fornecedor" || formData.userType === "empresa") && (
+                    <div className="space-y-2">
+                      <Label htmlFor="businessArea">Área de atuação</Label>
+                      <Select
+                        value={formData.businessArea || ""}
+                        onValueChange={(value) => handleInputChange("businessArea", value)}
+                      >
+                        <SelectTrigger className="h-12">
+                          <SelectValue placeholder="Selecione a área" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="alimentacao">Alimentação</SelectItem>
+                          <SelectItem value="higiene">Higiene e Beleza</SelectItem>
+                          <SelectItem value="brinquedos">Brinquedos</SelectItem>
+                          <SelectItem value="medicamentos">Medicamentos</SelectItem>
+                          <SelectItem value="acessorios">Acessórios</SelectItem>
+                          <SelectItem value="servicos">Serviços</SelectItem>
+                          <SelectItem value="outros">Outros</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  )}
+
+                  {formData.userType === "empresa" && (
+                    <div className="space-y-2">
+                      <Label htmlFor="employeeCount">Número de funcionários</Label>
+                      <Select
+                        value={formData.employeeCount || ""}
+                        onValueChange={(value) => handleInputChange("employeeCount", value)}
+                      >
+                        <SelectTrigger className="h-12">
+                          <SelectValue placeholder="Selecione" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="1-10">1-10 funcionários</SelectItem>
+                          <SelectItem value="11-50">11-50 funcionários</SelectItem>
+                          <SelectItem value="51-200">51-200 funcionários</SelectItem>
+                          <SelectItem value="201-500">201-500 funcionários</SelectItem>
+                          <SelectItem value="500+">Mais de 500 funcionários</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  )}
+                </div>
+
+                {formData.userType === "petshop" && (
+                  <div className="space-y-4">
+                    <Label>Serviços oferecidos</Label>
+                    <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                      {[
+                        "Banho e Tosa",
+                        "Veterinário",
+                        "Hotel",
+                        "Daycare",
+                        "Adestramento",
+                        "Fisioterapia",
+                        "Acupuntura",
+                        "Cirurgia",
+                        "Vacinação",
+                        "Microchipagem",
+                        "Castração",
+                        "Outros",
+                      ].map((service) => (
+                        <div key={service} className="flex items-center space-x-2">
+                          <Checkbox
+                            id={service}
+                            checked={formData.services?.includes(service) || false}
+                            onCheckedChange={() => handleServiceToggle(service)}
+                          />
+                          <Label htmlFor={service} className="text-sm">
+                            {service}
+                          </Label>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {formData.userType === "fornecedor" && (
+                  <div className="space-y-4">
+                    <Label>Produtos fornecidos</Label>
+                    <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                      {[
+                        "Ração",
+                        "Petiscos",
+                        "Brinquedos",
+                        "Coleiras",
+                        "Camas",
+                        "Medicamentos",
+                        "Shampoos",
+                        "Acessórios",
+                        "Equipamentos",
+                        "Outros",
+                      ].map((product) => (
+                        <div key={product} className="flex items-center space-x-2">
+                          <Checkbox
+                            id={product}
+                            checked={formData.products?.includes(product) || false}
+                            onCheckedChange={() => handleProductToggle(product)}
+                          />
+                          <Label htmlFor={product} className="text-sm">
+                            {product}
+                          </Label>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        )
+
+      case 4:
+        return (
+          <div className="space-y-6">
+            <div className="text-center">
+              <h2 className="text-2xl font-bold text-gray-900 mb-2">Endereço</h2>
+              <p className="text-gray-600">Onde você está localizado?</p>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="space-y-2">
+                <Label htmlFor="zipCode">CEP *</Label>
+                <Input
+                  id="zipCode"
+                  value={formData.address?.zipCode || ""}
+                  onChange={(e) => handleAddressChange("zipCode", e.target.value)}
+                  placeholder="00000-000"
+                  className="h-12"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="state">Estado *</Label>
                 <Select
-                  value={formData.userType}
-                  onValueChange={(value) => handleInputChange("userType", value)}
-                  required
+                  value={formData.address?.state || ""}
+                  onValueChange={(value) => handleAddressChange("state", value)}
                 >
-                  <SelectTrigger className="h-11 border-gray-200 focus:border-[#30B2B0] focus:ring-[#30B2B0]/20 rounded-xl">
-                    <SelectValue placeholder="Selecione o tipo de usuário" />
+                  <SelectTrigger className="h-12">
+                    <SelectValue placeholder="Selecione o estado" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="cliente">
-                      <div className="flex items-center gap-2">
-                        <User className="w-4 h-4" />
-                        Cliente (Dono de Pet)
-                      </div>
-                    </SelectItem>
-                    <SelectItem value="petshop">
-                      <div className="flex items-center gap-2">
-                        <Heart className="w-4 h-4" />
-                        Petshop/Clínica
-                      </div>
-                    </SelectItem>
-                    <SelectItem value="fornecedor">
-                      <div className="flex items-center gap-2">
-                        <Building className="w-4 h-4" />
-                        Fornecedor
-                      </div>
-                    </SelectItem>
-                    <SelectItem value="empresa">
-                      <div className="flex items-center gap-2">
-                        <Building className="w-4 h-4" />
-                        Empresa
-                      </div>
-                    </SelectItem>
+                    <SelectItem value="SP">São Paulo</SelectItem>
+                    <SelectItem value="RJ">Rio de Janeiro</SelectItem>
+                    <SelectItem value="MG">Minas Gerais</SelectItem>
+                    <SelectItem value="RS">Rio Grande do Sul</SelectItem>
+                    <SelectItem value="PR">Paraná</SelectItem>
+                    <SelectItem value="SC">Santa Catarina</SelectItem>
+                    <SelectItem value="BA">Bahia</SelectItem>
+                    <SelectItem value="GO">Goiás</SelectItem>
+                    <SelectItem value="PE">Pernambuco</SelectItem>
+                    <SelectItem value="CE">Ceará</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
 
-              {/* Nome */}
               <div className="space-y-2">
-                <Label htmlFor="name" className="text-sm font-medium text-gray-700">
-                  {isCompanyType ? "Nome do Responsável *" : "Nome Completo *"}
-                </Label>
-                <div className="relative">
-                  <User className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-                  <Input
-                    id="name"
-                    type="text"
-                    value={formData.name}
-                    onChange={(e) => handleInputChange("name", e.target.value)}
-                    placeholder="Seu nome completo"
-                    className="pl-10 h-11 border-gray-200 focus:border-[#30B2B0] focus:ring-[#30B2B0]/20 rounded-xl"
-                    required
-                  />
-                </div>
-              </div>
-
-              {/* Nome da Empresa (apenas para empresas) */}
-              {isCompanyType && (
-                <div className="space-y-2">
-                  <Label htmlFor="companyName" className="text-sm font-medium text-gray-700">
-                    Nome da Empresa *
-                  </Label>
-                  <div className="relative">
-                    <Building className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-                    <Input
-                      id="companyName"
-                      type="text"
-                      value={formData.companyName}
-                      onChange={(e) => handleInputChange("companyName", e.target.value)}
-                      placeholder="Nome da empresa"
-                      className="pl-10 h-11 border-gray-200 focus:border-[#30B2B0] focus:ring-[#30B2B0]/20 rounded-xl"
-                      required
-                    />
-                  </div>
-                </div>
-              )}
-
-              {/* CPF/CNPJ */}
-              <div className="space-y-2">
-                <Label htmlFor="document" className="text-sm font-medium text-gray-700">
-                  {isCompanyType ? "CNPJ *" : "CPF *"}
-                </Label>
+                <Label htmlFor="city">Cidade *</Label>
                 <Input
-                  id="document"
-                  type="text"
-                  value={formData.document}
-                  onChange={(e) => handleInputChange("document", e.target.value)}
-                  placeholder={isCompanyType ? "00.000.000/0000-00" : "000.000.000-00"}
-                  className="h-11 border-gray-200 focus:border-[#30B2B0] focus:ring-[#30B2B0]/20 rounded-xl"
-                  required
+                  id="city"
+                  value={formData.address?.city || ""}
+                  onChange={(e) => handleAddressChange("city", e.target.value)}
+                  placeholder="Sua cidade"
+                  className="h-12"
                 />
               </div>
 
-              {/* Email */}
               <div className="space-y-2">
-                <Label htmlFor="email" className="text-sm font-medium text-gray-700">
-                  E-mail *
-                </Label>
-                <div className="relative">
-                  <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-                  <Input
-                    id="email"
-                    type="email"
-                    value={formData.email}
-                    onChange={(e) => handleInputChange("email", e.target.value)}
-                    placeholder="seu@email.com"
-                    className="pl-10 h-11 border-gray-200 focus:border-[#30B2B0] focus:ring-[#30B2B0]/20 rounded-xl"
-                    required
-                  />
-                </div>
+                <Label htmlFor="neighborhood">Bairro *</Label>
+                <Input
+                  id="neighborhood"
+                  value={formData.address?.neighborhood || ""}
+                  onChange={(e) => handleAddressChange("neighborhood", e.target.value)}
+                  placeholder="Seu bairro"
+                  className="h-12"
+                />
               </div>
 
-              {/* Telefone */}
               <div className="space-y-2">
-                <Label htmlFor="phone" className="text-sm font-medium text-gray-700">
-                  Telefone
-                </Label>
-                <div className="relative">
-                  <Phone className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-                  <Input
-                    id="phone"
-                    type="tel"
-                    value={formData.phone}
-                    onChange={(e) => handleInputChange("phone", e.target.value)}
-                    placeholder="(11) 99999-9999"
-                    className="pl-10 h-11 border-gray-200 focus:border-[#30B2B0] focus:ring-[#30B2B0]/20 rounded-xl"
-                  />
-                </div>
+                <Label htmlFor="street">Rua *</Label>
+                <Input
+                  id="street"
+                  value={formData.address?.street || ""}
+                  onChange={(e) => handleAddressChange("street", e.target.value)}
+                  placeholder="Nome da rua"
+                  className="h-12"
+                />
               </div>
 
-              {/* Senha */}
               <div className="space-y-2">
-                <Label htmlFor="password" className="text-sm font-medium text-gray-700">
-                  Senha *
-                </Label>
-                <div className="relative">
-                  <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-                  <Input
-                    id="password"
-                    type={showPassword ? "text" : "password"}
-                    value={formData.password}
-                    onChange={(e) => handleInputChange("password", e.target.value)}
-                    placeholder="••••••••"
-                    className="pl-10 pr-10 h-11 border-gray-200 focus:border-[#30B2B0] focus:ring-[#30B2B0]/20 rounded-xl"
-                    required
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
-                  >
-                    {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                  </button>
-                </div>
+                <Label htmlFor="number">Número *</Label>
+                <Input
+                  id="number"
+                  value={formData.address?.number || ""}
+                  onChange={(e) => handleAddressChange("number", e.target.value)}
+                  placeholder="123"
+                  className="h-12"
+                />
               </div>
 
-              {/* Confirmar Senha */}
-              <div className="space-y-2">
-                <Label htmlFor="confirmPassword" className="text-sm font-medium text-gray-700">
-                  Confirmar Senha *
-                </Label>
-                <div className="relative">
-                  <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-                  <Input
-                    id="confirmPassword"
-                    type={showConfirmPassword ? "text" : "password"}
-                    value={formData.confirmPassword}
-                    onChange={(e) => handleInputChange("confirmPassword", e.target.value)}
-                    placeholder="••••••••"
-                    className="pl-10 pr-10 h-11 border-gray-200 focus:border-[#30B2B0] focus:ring-[#30B2B0]/20 rounded-xl"
-                    required
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                    className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
-                  >
-                    {showConfirmPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                  </button>
-                </div>
-                {formData.confirmPassword && formData.password !== formData.confirmPassword && (
-                  <p className="text-sm text-red-600">As senhas não coincidem</p>
-                )}
+              <div className="space-y-2 md:col-span-2">
+                <Label htmlFor="complement">Complemento</Label>
+                <Input
+                  id="complement"
+                  value={formData.address?.complement || ""}
+                  onChange={(e) => handleAddressChange("complement", e.target.value)}
+                  placeholder="Apartamento, sala, etc."
+                  className="h-12"
+                />
               </div>
-
-              {/* Termos de Uso */}
-              <div className="flex items-center space-x-2">
-                <Checkbox id="terms" checked={acceptTerms} onCheckedChange={setAcceptTerms} />
-                <Label htmlFor="terms" className="text-sm text-gray-600">
-                  Aceito os{" "}
-                  <Link href="/termos" className="text-[#30B2B0] hover:text-[#145D5F] underline">
-                    termos de uso
-                  </Link>{" "}
-                  e{" "}
-                  <Link href="/privacidade" className="text-[#30B2B0] hover:text-[#145D5F] underline">
-                    política de privacidade
-                  </Link>
-                </Label>
-              </div>
-
-              {/* Botão de Cadastro */}
-              <Button
-                type="submit"
-                disabled={!isFormValid || loading}
-                className="w-full h-11 bg-gradient-to-r from-bpet-primary to-bpet-secondary hover:from-bpet-secondary hover:to-bpet-primary text-white rounded-xl font-medium shadow-lg hover:shadow-xl transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {loading ? (
-                  <div className="flex items-center gap-2">
-                    <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
-                    Criando conta...
-                  </div>
-                ) : (
-                  "Criar Conta"
-                )}
-              </Button>
-            </form>
-
-            {/* Já tem conta */}
-            <div className="mt-6 text-center">
-              <span className="text-sm text-gray-600">Já tem uma conta? </span>
-              <Link href="/" className="text-sm text-[#30B2B0] hover:text-[#145D5F] font-medium hover:underline">
-                Fazer login
-              </Link>
             </div>
-          </CardContent>
-        </Card>
-      </div>
+          </div>
+        )
+
+      case 5:
+        return (
+          <div className="space-y-6">
+            <div className="text-center">
+              <h2 className="text-2xl font-bold text-gray-900 mb-2">Termos e condições</h2>
+              <p className="text-gray-600">Revise e aceite nossos termos para finalizar</p>
+            </div>
+
+            <Card className="p-6">
+              <div className="space-y-4">
+                <h3 className="font-semibold text-gray-900 flex items-center gap-2">
+                  <Shield className="w-5 h-5 text-[#30B2B0]" />
+                  Resumo da conta
+                </h3>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                  <div>
+                    <span className="text-gray-600">Tipo de conta:</span>
+                    <span className="ml-2 font-medium">
+                      {userTypes.find((t) => t.value === formData.userType)?.label}
+                    </span>
+                  </div>
+                  <div>
+                    <span className="text-gray-600">Nome:</span>
+                    <span className="ml-2 font-medium">{formData.name}</span>
+                  </div>
+                  <div>
+                    <span className="text-gray-600">Email:</span>
+                    <span className="ml-2 font-medium">{formData.email}</span>
+                  </div>
+                  <div>
+                    <span className="text-gray-600">Telefone:</span>
+                    <span className="ml-2 font-medium">{formData.phone}</span>
+                  </div>
+                  {formData.userType !== "cliente" && (
+                    <div className="md:col-span-2">
+                      <span className="text-gray-600">Empresa:</span>
+                      <span className="ml-2 font-medium">{formData.companyName}</span>
+                    </div>
+                  )}
+                </div>
+
+                <Separator />
+
+                <div className="space-y-4">
+                  <div className="flex items-start space-x-3">
+                    <Checkbox
+                      id="terms"
+                      checked={acceptTerms}
+                      onCheckedChange={(checked) => setAcceptTerms(checked === true)}
+                    />
+                    <div className="text-sm">
+                      <Label htmlFor="terms" className="cursor-pointer">
+                        Eu aceito os{" "}
+                        <a href="#" className="text-[#30B2B0] hover:underline">
+                          Termos de Uso
+                        </a>{" "}
+                        e a{" "}
+                        <a href="#" className="text-[#30B2B0] hover:underline">
+                          Política de Privacidade
+                        </a>
+                      </Label>
+                    </div>
+                  </div>
+
+                  <div className="text-xs text-gray-500 bg-gray-50 p-3 rounded-lg">
+                    <p>
+                      Ao criar sua conta, você concorda em receber comunicações da BPET sobre produtos, serviços e
+                      promoções. Você pode cancelar a inscrição a qualquer momento.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </Card>
+          </div>
+        )
+
+      default:
+        return null
+    }
+  }
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-[#D6DD83]/20 via-[#FFBDB6]/20 to-[#30B2B0]/20">
+      {/* Header */}
+      <header className="bg-white shadow-sm border-b border-orange-100 sticky top-0 z-50">
+        <div className="flex items-center justify-between px-6 py-4">
+          <div className="flex items-center gap-4">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => router.back()}
+              className="hover:bg-orange-100 rounded-xl"
+            >
+              <ArrowLeft className="h-5 w-5 text-gray-700" />
+            </Button>
+            <div>
+              <h1 className="font-bold text-xl text-gray-900">Criar conta</h1>
+              <p className="text-sm text-gray-600">
+                Etapa {currentStep} de 5 - {Math.round((currentStep / 5) * 100)}% concluído
+              </p>
+            </div>
+          </div>
+        </div>
+
+        {/* Progress bar */}
+        <div className="w-full bg-gray-200 h-1">
+          <div
+            className="bg-gradient-to-r from-[#30B2B0] to-[#FFBDB6] h-1 transition-all duration-300"
+            style={{ width: `${(currentStep / 5) * 100}%` }}
+          />
+        </div>
+      </header>
+
+      {/* Conteúdo Principal */}
+      <main className="px-6 py-8">
+        <div className="max-w-4xl mx-auto">
+          <Card className="border-0 shadow-xl bg-white/80 backdrop-blur-sm rounded-2xl">
+            <CardContent className="p-8">{renderStepContent()}</CardContent>
+          </Card>
+
+          {/* Botões de navegação */}
+          <div className="flex justify-between mt-8">
+            <Button
+              variant="outline"
+              onClick={prevStep}
+              disabled={currentStep === 1}
+              className="px-8 py-3 rounded-xl bg-transparent"
+            >
+              Voltar
+            </Button>
+
+            {currentStep < 5 ? (
+              <Button
+                onClick={nextStep}
+                className="px-8 py-3 bg-gradient-to-r from-[#30B2B0] to-[#FFBDB6] hover:from-[#FFBDB6] hover:to-[#30B2B0] text-white rounded-xl"
+              >
+                Próximo
+              </Button>
+            ) : (
+              <Button
+                onClick={handleSubmit}
+                disabled={loading || !acceptTerms}
+                className="px-8 py-3 bg-gradient-to-r from-[#30B2B0] to-[#FFBDB6] hover:from-[#FFBDB6] hover:to-[#30B2B0] text-white rounded-xl"
+              >
+                {loading ? "Criando conta..." : "Criar conta"}
+              </Button>
+            )}
+          </div>
+        </div>
+      </main>
     </div>
   )
 }

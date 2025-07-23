@@ -1,24 +1,19 @@
 // Tipos base para API
 export interface ApiResponse<T = any> {
   success: boolean
-  data?: T
-  message?: string
+  message: string
+  data: T
   errors?: Record<string, string[]>
-  meta?: {
-    page?: number
-    limit?: number
-    total?: number
-    totalPages?: number
-  }
 }
 
-export interface PaginatedResponse<T> extends ApiResponse<T[]> {
-  meta: {
-    page: number
-    limit: number
-    total: number
-    totalPages: number
-  }
+export interface PaginatedResponse<T> {
+  data: T[]
+  current_page: number
+  last_page: number
+  per_page: number
+  total: number
+  from: number
+  to: number
 }
 
 // Tipos de usuário
@@ -27,12 +22,15 @@ export interface User {
   name: string
   email: string
   userType: "cliente" | "petshop" | "fornecedor" | "empresa" | "administrador"
+  user_type: "cliente" | "petshop" | "fornecedor" | "empresa" | "administrador"
+  document?: string
   phone?: string
+  company_name?: string
   avatar?: string
-  isActive: boolean
-  createdAt: string
-  updatedAt: string
-  profile?: UserProfile
+  status: "active" | "inactive"
+  email_verified_at?: string
+  created_at: string
+  updated_at: string
 }
 
 export interface UserProfile {
@@ -73,19 +71,40 @@ export interface RegisterRequest {
   name: string
   email: string
   password: string
-  confirmPassword: string
-  userType: "cliente" | "petshop" | "fornecedor" | "empresa"
-  phone?: string
+  userType: string
   document?: string
-  acceptTerms: boolean
+  phone?: string
+  companyName?: string
 }
 
 export interface LoginResponse {
   user: User
   access_token: string
   refresh_token: string
-  expires_in: number
   token_type: string
+  expires_in: number
+}
+
+// Tipos de cliente
+export interface Client {
+  id: string
+  name: string
+  email: string
+  phone?: string
+  document?: string
+  birth_date?: string
+  status: "active" | "inactive"
+  address?: {
+    street: string
+    number: string
+    complement?: string
+    neighborhood: string
+    city: string
+    state: string
+    zip_code: string
+  }
+  created_at: string
+  updated_at: string
 }
 
 // Tipos de Pet
@@ -94,18 +113,17 @@ export interface Pet {
   name: string
   species: string
   breed?: string
-  age?: number
+  birth_date?: string
   weight?: number
   color?: string
   gender: "male" | "female"
-  isNeutered: boolean
-  ownerId: string
+  status: "active" | "inactive"
+  owner_id: string
+  owner?: Client
   avatar?: string
-  isActive: boolean
-  createdAt: string
-  updatedAt: string
-  medicalHistory?: MedicalRecord[]
-  vaccinations?: Vaccination[]
+  microchip?: string
+  created_at: string
+  updated_at: string
 }
 
 export interface MedicalRecord {
@@ -260,15 +278,18 @@ export interface SubscriptionPlan {
 export interface Campaign {
   id: string
   title: string
-  description?: string
+  description: string
   type: "discount" | "promotion" | "announcement"
-  startDate: string
-  endDate: string
-  isActive: boolean
-  targetAudience?: string[]
-  createdBy: string
-  createdAt: string
-  updatedAt: string
+  status: "active" | "inactive" | "scheduled"
+  start_date: string
+  end_date?: string
+  target_audience?: string
+  discount_percentage?: number
+  discount_amount?: number
+  image?: string
+  created_by: string
+  created_at: string
+  updated_at: string
 }
 
 // Tipos de Feedback
@@ -276,15 +297,16 @@ export interface Feedback {
   id: string
   title: string
   message: string
-  rating?: number
   type: "suggestion" | "complaint" | "compliment" | "bug_report"
   status: "pending" | "in_progress" | "resolved" | "closed"
-  userId: string
-  createdAt: string
-  updatedAt: string
+  priority: "low" | "medium" | "high"
+  user_id: string
+  user?: User
   response?: string
-  respondedAt?: string
-  respondedBy?: string
+  responded_by?: string
+  responded_at?: string
+  created_at: string
+  updated_at: string
 }
 
 // Tipos de Notificação
@@ -292,12 +314,14 @@ export interface Notification {
   id: string
   title: string
   message: string
-  type: "info" | "warning" | "success" | "error"
-  isRead: boolean
-  userId: string
-  createdAt: string
-  updatedAt: string
-  actionUrl?: string
+  type: "info" | "success" | "warning" | "error"
+  is_read: boolean
+  read_at?: string
+  action_url?: string
+  protocol?: string
+  user_id: string
+  created_at: string
+  updated_at: string
 }
 
 // Tipos de Estatística
@@ -411,4 +435,20 @@ export interface Product {
   sellerId: string
   createdAt: string
   updatedAt: string
+}
+
+// Tipos de indicação
+export interface Indication {
+  id: string
+  referrer_id: string
+  referrer?: User
+  referred_name: string
+  referred_email: string
+  referred_phone?: string
+  status: "pending" | "approved" | "rejected"
+  commission_amount?: number
+  commission_paid?: boolean
+  notes?: string
+  created_at: string
+  updated_at: string
 }

@@ -1,236 +1,238 @@
-import { ApiClient } from "@/lib/api-client"
-import type { User, LoginRequest, LoginResponse, RegisterRequest } from "@/types/api"
+import { apiClient } from "@/lib/api-client"
+import type { ApiResponse } from "@/types/api"
 
-interface TokenData {
-  access_token: string
-  refresh_token: string
-  expires_in: number
-  token_type: string
+// Tipos específicos para autenticação
+export interface User {
+  id: string
+  name: string
+  email: string
+  phone?: string
+  avatar?: string
+  userType: "cliente" | "petshop" | "fornecedor" | "empresa" | "administrador" | "parceiro"
+  user_type?: "cliente" | "petshop" | "fornecedor" | "empresa" | "administrador" | "parceiro" // Compatibilidade
+  status: "active" | "inactive" | "pending" | "suspended"
+  emailVerified: boolean
+  phoneVerified: boolean
+  profile?: {
+    document?: string
+    birthDate?: string
+    address?: {
+      street: string
+      number: string
+      complement?: string
+      neighborhood: string
+      city: string
+      state: string
+      zipCode: string
+    }
+    preferences?: {
+      notifications: {
+        email: boolean
+        sms: boolean
+        push: boolean
+      }
+      language: string
+      timezone: string
+    }
+  }
+  subscription?: {
+    planId: string
+    status: string
+    expiresAt: string
+  }
+  createdAt: string
+  updatedAt: string
 }
 
-interface ResetPasswordRequest {
+export interface LoginRequest {
+  email: string
+  password: string
+  rememberMe?: boolean
+}
+
+export interface LoginResponse {
+  user: User
+  token: string
+  refreshToken: string
+  expiresIn: number
+}
+
+export interface RegisterRequest {
+  name: string
+  email: string
+  password: string
+  phone?: string
+  userType: User["userType"]
+  document?: string
+  acceptTerms: boolean
+}
+
+export interface ForgotPasswordRequest {
+  email: string
+}
+
+export interface ResetPasswordRequest {
   token: string
   password: string
   confirmPassword: string
 }
 
-interface ChangePasswordRequest {
+export interface ChangePasswordRequest {
   currentPassword: string
   newPassword: string
   confirmPassword: string
 }
 
+export interface UpdateProfileRequest {
+  name?: string
+  phone?: string
+  avatar?: string
+  profile?: Partial<User["profile"]>
+}
+
 export class AuthService {
-  private static readonly ACCESS_TOKEN_KEY = "bpet_access_token"
-  private static readonly REFRESH_TOKEN_KEY = "bpet_refresh_token"
-  private static readonly USER_KEY = "bpet_user"
-
+  // Autenticação
   static async login(credentials: LoginRequest): Promise<LoginResponse> {
-    try {
-      const response = await ApiClient.post<LoginResponse>("/auth/login", credentials)
+    const response = await apiClient.post<ApiResponse<LoginResponse>>("/auth/login", credentials)
 
-      if (response.success && response.data) {
-        // Armazenar tokens
-        this.setTokens(response.data.access_token, response.data.refresh_token)
-
-        // Armazenar dados do usuário
-        localStorage.setItem(this.USER_KEY, JSON.stringify(response.data.user))
-
-        return response.data
-      }
-
-      throw new Error(response.message || "Erro no login")
-    } catch (error) {
-      console.error("Erro no login:", error)
-      throw error
+    // Salvar tokens no localStorage
+    if (response.data.token) {
+      localStorage.setItem("auth_token", response.data.token)
+      localStorage.setItem("refresh_token", response.data.refreshToken)
+      localStorage.setItem("user", JSON.stringify(response.data.user))
     }
+
+    return response.data
   }
 
-  static async register(userData: RegisterRequest): Promise<void> {
-    try {
-      const response = await ApiClient.post("/auth/register", userData)
+  static async register(userData: RegisterRequest): Promise<LoginResponse> {
+    const response = await apiClient.post<ApiResponse<LoginResponse>>("/auth/register", userData)
 
-      if (!response.success) {
-        throw new Error(response.message || "Erro no cadastro")
-      }
-    } catch (error) {
-      console.error("Erro no cadastro:", error)
-      throw error
+    // Salvar tokens no localStorage
+    if (response.data.token) {
+      localStorage.setItem("auth_token", response.data.token)
+      localStorage.setItem("refresh_token", response.data.refreshToken)
+      localStorage.setItem("user", JSON.stringify(response.data.user))
     }
+
+    return response.data
   }
 
   static async logout(): Promise<void> {
     try {
-      const token = this.getAccessToken()
-      if (token) {
-        await ApiClient.post(
-          "/auth/logout",
-          {},
-          {
-            headers: { Authorization: `Bearer ${token}` },
-          },
-        )
-      }
+      await apiClient.post("/auth/logout")
     } catch (error) {
-      console.error("Erro no logout:", error)
+      // Ignorar erros de logout
     } finally {
-      this.clearTokens()
-      localStorage.removeItem(this.USER_KEY)
+      // Limpar dados locais
+      localStorage.removeItem("auth_token")
+      localStorage.removeItem("refresh_token")
+      localStorage.removeItem("user")
     }
   }
 
-  static async refreshToken(): Promise<string | null> {
-    try {
-      const refreshToken = this.getRefreshToken()
-      if (!refreshToken) {
-        throw new Error("Refresh token não encontrado")
-      }
-
-      const response = await ApiClient.post<TokenData>("/auth/refresh", {
-        refresh_token: refreshToken,
-      })
-
-      if (response.success && response.data) {
-        this.setTokens(response.data.access_token, response.data.refresh_token)
-        return response.data.access_token
-      }
-
-      throw new Error("Erro ao renovar token")
-    } catch (error) {
-      console.error("Erro ao renovar token:", error)
-      this.clearTokens()
-      return null
-    }
-  }
-
-  static async getCurrentUser(): Promise<User> {
-    try {
-      const token = await this.ensureValidToken()
-      if (!token) {
-        throw new Error("Token não encontrado")
-      }
-
-      const response = await ApiClient.get<User>("/auth/me", {
-        headers: { Authorization: `Bearer ${token}` },
-      })
-
-      if (response.success && response.data) {
-        localStorage.setItem(this.USER_KEY, JSON.stringify(response.data))
-        return response.data
-      }
-
-      throw new Error("Erro ao buscar dados do usuário")
-    } catch (error) {
-      console.error("Erro ao buscar usuário:", error)
-      throw error
-    }
-  }
-
-  static async forgotPassword(email: string): Promise<void> {
-    try {
-      const response = await ApiClient.post("/auth/forgot-password", { email })
-
-      if (!response.success) {
-        throw new Error(response.message || "Erro ao enviar e-mail")
-      }
-    } catch (error) {
-      console.error("Erro ao enviar e-mail:", error)
-      throw error
-    }
-  }
-
-  static async resetPassword(data: ResetPasswordRequest): Promise<void> {
-    try {
-      const response = await ApiClient.post("/auth/reset-password", data)
-
-      if (!response.success) {
-        throw new Error(response.message || "Erro ao redefinir senha")
-      }
-    } catch (error) {
-      console.error("Erro ao redefinir senha:", error)
-      throw error
-    }
-  }
-
-  static async changePassword(data: ChangePasswordRequest): Promise<void> {
-    try {
-      const token = await this.ensureValidToken()
-      if (!token) {
-        throw new Error("Token não encontrado")
-      }
-
-      const response = await ApiClient.post("/auth/change-password", data, {
-        headers: { Authorization: `Bearer ${token}` },
-      })
-
-      if (!response.success) {
-        throw new Error(response.message || "Erro ao alterar senha")
-      }
-    } catch (error) {
-      console.error("Erro ao alterar senha:", error)
-      throw error
-    }
-  }
-
-  static async ensureValidToken(): Promise<string | null> {
-    const token = this.getAccessToken()
-
-    if (!token) {
-      return null
+  static async refreshToken(): Promise<{ token: string; refreshToken: string; expiresIn: number }> {
+    const refreshToken = localStorage.getItem("refresh_token")
+    if (!refreshToken) {
+      throw new Error("No refresh token available")
     }
 
-    // Verificar se o token está próximo do vencimento
-    if (this.isTokenExpiringSoon(token)) {
-      return await this.refreshToken()
-    }
+    const response = await apiClient.post<ApiResponse<{ token: string; refreshToken: string; expiresIn: number }>>(
+      "/auth/refresh",
+      { refreshToken },
+    )
 
-    return token
+    // Atualizar tokens
+    localStorage.setItem("auth_token", response.data.token)
+    localStorage.setItem("refresh_token", response.data.refreshToken)
+
+    return response.data
   }
 
-  static getAccessToken(): string | null {
-    if (typeof window === "undefined") return null
-    return localStorage.getItem(this.ACCESS_TOKEN_KEY)
+  // Recuperação de senha
+  static async forgotPassword(data: ForgotPasswordRequest): Promise<{ message: string }> {
+    const response = await apiClient.post<ApiResponse<{ message: string }>>("/auth/forgot-password", data)
+    return response.data
   }
 
-  static getRefreshToken(): string | null {
-    if (typeof window === "undefined") return null
-    return localStorage.getItem(this.REFRESH_TOKEN_KEY)
+  static async resetPassword(data: ResetPasswordRequest): Promise<{ message: string }> {
+    const response = await apiClient.post<ApiResponse<{ message: string }>>("/auth/reset-password", data)
+    return response.data
   }
 
-  static getCachedUser(): User | null {
-    if (typeof window === "undefined") return null
-    const userData = localStorage.getItem(this.USER_KEY)
-    return userData ? JSON.parse(userData) : null
+  static async changePassword(data: ChangePasswordRequest): Promise<{ message: string }> {
+    const response = await apiClient.post<ApiResponse<{ message: string }>>("/auth/change-password", data)
+    return response.data
+  }
+
+  // Perfil
+  static async getProfile(): Promise<User> {
+    const response = await apiClient.get<ApiResponse<User>>("/auth/profile")
+
+    // Atualizar dados do usuário no localStorage
+    localStorage.setItem("user", JSON.stringify(response.data))
+
+    return response.data
+  }
+
+  static async updateProfile(data: UpdateProfileRequest): Promise<User> {
+    const response = await apiClient.put<ApiResponse<User>>("/auth/profile", data)
+
+    // Atualizar dados do usuário no localStorage
+    localStorage.setItem("user", JSON.stringify(response.data))
+
+    return response.data
+  }
+
+  static async uploadAvatar(file: File): Promise<{ url: string }> {
+    const formData = new FormData()
+    formData.append("avatar", file)
+
+    const response = await apiClient.post<ApiResponse<{ url: string }>>("/auth/upload-avatar", formData, {
+      headers: {
+        "Content-Type": "multipart/form-data",
+      },
+    })
+    return response.data
+  }
+
+  // Verificação
+  static async sendEmailVerification(): Promise<{ message: string }> {
+    const response = await apiClient.post<ApiResponse<{ message: string }>>("/auth/send-email-verification")
+    return response.data
+  }
+
+  static async verifyEmail(token: string): Promise<{ message: string }> {
+    const response = await apiClient.post<ApiResponse<{ message: string }>>("/auth/verify-email", { token })
+    return response.data
+  }
+
+  static async sendPhoneVerification(): Promise<{ message: string }> {
+    const response = await apiClient.post<ApiResponse<{ message: string }>>("/auth/send-phone-verification")
+    return response.data
+  }
+
+  static async verifyPhone(code: string): Promise<{ message: string }> {
+    const response = await apiClient.post<ApiResponse<{ message: string }>>("/auth/verify-phone", { code })
+    return response.data
+  }
+
+  // Utilitários
+  static getCurrentUser(): User | null {
+    const userStr = localStorage.getItem("user")
+    return userStr ? JSON.parse(userStr) : null
+  }
+
+  static getToken(): string | null {
+    return localStorage.getItem("auth_token")
   }
 
   static isAuthenticated(): boolean {
-    return !!this.getAccessToken()
+    return !!this.getToken()
   }
 
-  private static setTokens(accessToken: string, refreshToken: string): void {
-    if (typeof window === "undefined") return
-    localStorage.setItem(this.ACCESS_TOKEN_KEY, accessToken)
-    localStorage.setItem(this.REFRESH_TOKEN_KEY, refreshToken)
-  }
-
-  private static clearTokens(): void {
-    if (typeof window === "undefined") return
-    localStorage.removeItem(this.ACCESS_TOKEN_KEY)
-    localStorage.removeItem(this.REFRESH_TOKEN_KEY)
-  }
-
-  private static isTokenExpiringSoon(token: string): boolean {
-    try {
-      const payload = JSON.parse(atob(token.split(".")[1]))
-      const exp = payload.exp * 1000 // Converter para milliseconds
-      const now = Date.now()
-      const timeUntilExpiry = exp - now
-
-      // Renovar se expira em menos de 5 minutos
-      return timeUntilExpiry < 5 * 60 * 1000
-    } catch (error) {
-      console.error("Erro ao verificar expiração do token:", error)
-      return true // Se não conseguir verificar, assume que precisa renovar
-    }
+  static hasRole(role: User["userType"]): boolean {
+    const user = this.getCurrentUser()
+    return user?.userType === role || user?.user_type === role
   }
 }

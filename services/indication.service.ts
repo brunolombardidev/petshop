@@ -1,23 +1,53 @@
 import { apiClient } from "@/lib/api-client"
-import type { ApiResponse, Indication, PaginatedResponse } from "@/types/api"
+import type { ApiResponse, PaginatedResponse } from "@/types/api"
 
-export interface CreateIndicationRequest {
-  referredEmail: string
-  referredName?: string
-  message?: string
+// Tipos específicos para indicações
+export interface Indication {
+  id: string
+  referrerId: string // Quem indicou
+  referredEmail: string // Email do indicado
+  referredName?: string // Nome do indicado (opcional)
+  referredPhone?: string // Telefone do indicado (opcional)
+  status: "pending" | "registered" | "activated" | "expired" | "cancelled"
+  type: "client" | "petshop" | "supplier" | "partner"
+  message?: string // Mensagem personalizada
+  reward?: {
+    type: "discount" | "cashback" | "points" | "free_service"
+    value: number
+    description: string
+    claimed: boolean
+    claimedAt?: string
+  }
+  registeredAt?: string // Quando o indicado se registrou
+  activatedAt?: string // Quando o indicado ativou a conta
+  expiresAt: string
+  createdAt: string
+  updatedAt: string
+  referrer?: {
+    id: string
+    name: string
+    email: string
+    userType: string
+  }
+  referred?: {
+    id: string
+    name: string
+    email: string
+    userType: string
+  }
 }
 
 export interface IndicationStats {
-  totalIndications: number
-  successfulIndications: number
-  pendingIndications: number
+  total: number
+  byStatus: Record<Indication["status"], number>
+  byType: Record<Indication["type"], number>
   conversionRate: number
   totalRewards: number
-  thisMonthIndications: number
+  claimedRewards: number
   topReferrers: Array<{
     userId: string
     userName: string
-    indicationCount: number
+    count: number
     successfulCount: number
     totalRewards: number
   }>
@@ -25,205 +55,152 @@ export interface IndicationStats {
 
 export interface IndicationReward {
   id: string
-  indicationId: string
-  referrerUserId: string
-  amount: number
-  type: "credit" | "discount" | "cash"
-  status: "pending" | "approved" | "paid"
+  type: "discount" | "cashback" | "points" | "free_service"
+  targetType: "client" | "petshop" | "supplier" | "partner"
+  value: number
   description: string
+  conditions?: string
+  isActive: boolean
+  validUntil?: string
   createdAt: string
-  paidAt?: string
+  updatedAt: string
 }
 
 export class IndicationService {
-  // Obter minhas indicações
+  // Indicações
+  static async getIndications(params?: {
+    page?: number
+    limit?: number
+    status?: string
+    type?: string
+    referrerId?: string
+    search?: string
+    startDate?: string
+    endDate?: string
+  }): Promise<PaginatedResponse<Indication>> {
+    const response = await apiClient.get<ApiResponse<PaginatedResponse<Indication>>>("/indicacoes", params)
+    return response.data
+  }
+
+  static async getIndication(id: string): Promise<Indication> {
+    const response = await apiClient.get<ApiResponse<Indication>>(`/indicacoes/${id}`)
+    return response.data
+  }
+
+  static async createIndication(indicationData: {
+    referredEmail: string
+    referredName?: string
+    referredPhone?: string
+    type: Indication["type"]
+    message?: string
+  }): Promise<Indication> {
+    const response = await apiClient.post<ApiResponse<Indication>>("/indicacoes", indicationData)
+    return response.data
+  }
+
+  static async updateIndication(id: string, indicationData: Partial<Indication>): Promise<Indication> {
+    const response = await apiClient.put<ApiResponse<Indication>>(`/indicacoes/${id}`, indicationData)
+    return response.data
+  }
+
+  static async deleteIndication(id: string): Promise<void> {
+    await apiClient.delete(`/indicacoes/${id}`)
+  }
+
+  static async resendIndication(id: string): Promise<Indication> {
+    const response = await apiClient.post<ApiResponse<Indication>>(`/indicacoes/${id}/reenviar`)
+    return response.data
+  }
+
+  static async cancelIndication(id: string): Promise<Indication> {
+    const response = await apiClient.post<ApiResponse<Indication>>(`/indicacoes/${id}/cancelar`)
+    return response.data
+  }
+
+  // Minhas indicações
   static async getMyIndications(params?: {
     page?: number
     limit?: number
-    status?: "pending" | "registered" | "expired"
+    status?: string
+    type?: string
   }): Promise<PaginatedResponse<Indication>> {
-    const response = await apiClient.get<ApiResponse<PaginatedResponse<Indication>>>("/indications/me", params)
+    const response = await apiClient.get<ApiResponse<PaginatedResponse<Indication>>>("/indicacoes/minhas", params)
     return response.data
   }
 
-  // Criar nova indicação
-  static async createIndication(data: CreateIndicationRequest): Promise<Indication> {
-    const response = await apiClient.post<ApiResponse<Indication>>("/indications", data)
+  // Recompensas
+  static async claimReward(indicationId: string): Promise<Indication> {
+    const response = await apiClient.post<ApiResponse<Indication>>(`/indicacoes/${indicationId}/recompensa/resgatar`)
     return response.data
   }
 
-  // Reenviar convite de indicação
-  static async resendInvitation(indicationId: string): Promise<void> {
-    await apiClient.post(`/indications/${indicationId}/resend`)
-  }
-
-  // Cancelar indicação
-  static async cancelIndication(indicationId: string): Promise<void> {
-    await apiClient.delete(`/indications/${indicationId}`)
-  }
-
-  // Obter todas as indicações (admin)
-  static async getAllIndications(params?: {
-    page?: number
-    limit?: number
-    status?: "pending" | "registered" | "expired"
-    referrerUserId?: string
-    startDate?: string
-    endDate?: string
-  }): Promise<PaginatedResponse<Indication>> {
-    const response = await apiClient.get<ApiResponse<PaginatedResponse<Indication>>>("/indications", params)
-    return response.data
-  }
-
-  // Obter estatísticas de indicações
-  static async getIndicationStats(params?: {
-    startDate?: string
-    endDate?: string
-    userId?: string
-  }): Promise<IndicationStats> {
-    const response = await apiClient.get<ApiResponse<IndicationStats>>("/indications/stats", params)
-    return response.data
-  }
-
-  // Obter minhas recompensas
   static async getMyRewards(params?: {
     page?: number
     limit?: number
-    status?: "pending" | "approved" | "paid"
-  }): Promise<PaginatedResponse<IndicationReward>> {
-    const response = await apiClient.get<ApiResponse<PaginatedResponse<IndicationReward>>>(
-      "/indications/rewards/me",
-      params,
-    )
+    claimed?: boolean
+  }): Promise<PaginatedResponse<Indication["reward"] & { indicationId: string }>> {
+    const response = await apiClient.get<
+      ApiResponse<PaginatedResponse<Indication["reward"] & { indicationId: string }>>
+    >("/indicacoes/minhas-recompensas", params)
     return response.data
   }
 
-  // Obter todas as recompensas (admin)
-  static async getAllRewards(params?: {
-    page?: number
-    limit?: number
-    status?: "pending" | "approved" | "paid"
-    userId?: string
-    startDate?: string
-    endDate?: string
-  }): Promise<PaginatedResponse<IndicationReward>> {
-    const response = await apiClient.get<ApiResponse<PaginatedResponse<IndicationReward>>>(
-      "/indications/rewards",
-      params,
-    )
+  // Configurações de recompensas (admin)
+  static async getRewardSettings(): Promise<IndicationReward[]> {
+    const response = await apiClient.get<ApiResponse<IndicationReward[]>>("/indicacoes/recompensas")
     return response.data
   }
 
-  // Aprovar recompensa (admin)
-  static async approveReward(rewardId: string): Promise<IndicationReward> {
-    const response = await apiClient.patch<ApiResponse<IndicationReward>>(`/indications/rewards/${rewardId}/approve`)
-    return response.data
-  }
-
-  // Marcar recompensa como paga (admin)
-  static async markRewardAsPaid(
-    rewardId: string,
-    paymentDetails?: {
-      method: string
-      transactionId?: string
-      notes?: string
-    },
+  static async createRewardSetting(
+    rewardData: Omit<IndicationReward, "id" | "createdAt" | "updatedAt">,
   ): Promise<IndicationReward> {
-    const response = await apiClient.patch<ApiResponse<IndicationReward>>(
-      `/indications/rewards/${rewardId}/pay`,
-      paymentDetails,
-    )
+    const response = await apiClient.post<ApiResponse<IndicationReward>>("/indicacoes/recompensas", rewardData)
     return response.data
   }
 
-  // Obter configurações do programa de indicação
-  static async getIndicationSettings(): Promise<{
-    rewardAmount: number
-    rewardType: "credit" | "discount" | "cash"
-    minimumPurchaseAmount?: number
-    expirationDays: number
-    maxIndicationsPerUser?: number
-    isActive: boolean
-    terms: string
-  }> {
-    const response = await apiClient.get<ApiResponse<any>>("/indications/settings")
+  static async updateRewardSetting(id: string, rewardData: Partial<IndicationReward>): Promise<IndicationReward> {
+    const response = await apiClient.put<ApiResponse<IndicationReward>>(`/indicacoes/recompensas/${id}`, rewardData)
     return response.data
   }
 
-  // Atualizar configurações do programa de indicação (admin)
-  static async updateIndicationSettings(settings: {
-    rewardAmount?: number
-    rewardType?: "credit" | "discount" | "cash"
-    minimumPurchaseAmount?: number
-    expirationDays?: number
-    maxIndicationsPerUser?: number
-    isActive?: boolean
-    terms?: string
-  }): Promise<void> {
-    await apiClient.put("/indications/settings", settings)
+  static async deleteRewardSetting(id: string): Promise<void> {
+    await apiClient.delete(`/indicacoes/recompensas/${id}`)
   }
 
-  // Verificar se email já foi indicado
-  static async checkEmailAvailability(email: string): Promise<{ available: boolean; reason?: string }> {
-    const response = await apiClient.post<ApiResponse<{ available: boolean; reason?: string }>>(
-      "/indications/check-email",
-      { email },
-    )
-    return response.data
-  }
-
-  // Obter link de indicação personalizado
-  static async getIndicationLink(): Promise<{ link: string; code: string }> {
-    const response = await apiClient.get<ApiResponse<{ link: string; code: string }>>("/indications/link")
-    return response.data
-  }
-
-  // Registrar clique no link de indicação
-  static async trackIndicationClick(
-    code: string,
-    metadata?: {
-      userAgent?: string
-      referrer?: string
-      ip?: string
-    },
-  ): Promise<void> {
-    await apiClient.post("/indications/track-click", { code, metadata })
-  }
-
-  // Obter ranking de indicadores
-  static async getIndicationRanking(params?: {
-    period?: "month" | "quarter" | "year" | "all"
-    limit?: number
-  }): Promise<
-    Array<{
-      rank: number
-      userId: string
-      userName: string
-      indicationCount: number
-      successfulCount: number
-      conversionRate: number
-      totalRewards: number
-    }>
-  > {
-    const response = await apiClient.get<ApiResponse<any[]>>("/indications/ranking", params)
-    return response.data
-  }
-
-  // Exportar relatório de indicações
-  static async exportIndicationReport(params: {
-    format: "csv" | "xlsx"
+  // Estatísticas (admin)
+  static async getIndicationStats(params?: {
     startDate?: string
     endDate?: string
-    status?: "pending" | "registered" | "expired"
-    includeRewards?: boolean
-  }): Promise<Blob> {
-    const queryParams = new URLSearchParams()
-    Object.entries(params).forEach(([key, value]) => {
-      if (value !== undefined) {
-        queryParams.append(key, String(value))
-      }
-    })
+    referrerId?: string
+  }): Promise<IndicationStats> {
+    const response = await apiClient.get<ApiResponse<IndicationStats>>("/indicacoes/estatisticas", params)
+    return response.data
+  }
 
-    return apiClient.download(`/indications/export?${queryParams.toString()}`)
+  // Validar indicação (quando alguém se registra via link)
+  static async validateIndication(token: string): Promise<{
+    valid: boolean
+    indication?: Indication
+    reward?: IndicationReward
+  }> {
+    const response = await apiClient.get<
+      ApiResponse<{
+        valid: boolean
+        indication?: Indication
+        reward?: IndicationReward
+      }>
+    >(`/indicacoes/validar/${token}`)
+    return response.data
+  }
+
+  // Gerar link de indicação
+  static async generateIndicationLink(indicationId: string): Promise<{ link: string; token: string }> {
+    const response = await apiClient.post<ApiResponse<{ link: string; token: string }>>(
+      `/indicacoes/${indicationId}/link`,
+    )
+    return response.data
   }
 }
+
+// Exportar instância para compatibilidade
+export const indicationService = IndicationService

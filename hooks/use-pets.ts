@@ -1,41 +1,16 @@
 "use client"
 
 import { useState, useEffect } from "react"
+import {
+  petService,
+  type Pet,
+  type CreatePetRequest,
+  type UpdatePetRequest,
+  type PetFilters,
+} from "@/services/pet.service"
 import { toast } from "@/hooks/use-toast"
 
-export interface Pet {
-  id: string
-  name: string
-  species: string
-  breed?: string
-  age?: number
-  weight?: number
-  color?: string
-  gender: "male" | "female"
-  ownerId: string
-  avatar?: string
-  isActive: boolean
-  birthDate?: string
-  microchipId?: string
-  notes?: string
-  createdAt: string
-  updatedAt: string
-}
-
-export interface CreatePetRequest {
-  name: string
-  species: string
-  breed?: string
-  age?: number
-  weight?: number
-  color?: string
-  gender: "male" | "female"
-  birthDate?: string
-  microchipId?: string
-  notes?: string
-}
-
-export function usePets() {
+export function usePets(filters?: PetFilters) {
   const [pets, setPets] = useState<Pet[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -44,47 +19,8 @@ export function usePets() {
     try {
       setLoading(true)
       setError(null)
-
-      // Simulação de dados - substituir pela chamada real da API
-      const mockPets: Pet[] = [
-        {
-          id: "1",
-          name: "Rex",
-          species: "Cão",
-          breed: "Golden Retriever",
-          age: 3,
-          weight: 25.5,
-          color: "Dourado",
-          gender: "male",
-          ownerId: "user1",
-          avatar: "/placeholder-user.jpg",
-          isActive: true,
-          birthDate: "2021-03-15",
-          microchipId: "123456789",
-          notes: "Pet muito dócil e brincalhão",
-          createdAt: "2021-03-20T10:00:00Z",
-          updatedAt: "2024-01-15T14:30:00Z",
-        },
-        {
-          id: "2",
-          name: "Mimi",
-          species: "Gato",
-          breed: "Persa",
-          age: 2,
-          weight: 4.2,
-          color: "Branco",
-          gender: "female",
-          ownerId: "user1",
-          avatar: "/placeholder-user.jpg",
-          isActive: true,
-          birthDate: "2022-07-10",
-          notes: "Gata muito carinhosa",
-          createdAt: "2022-07-15T09:00:00Z",
-          updatedAt: "2024-01-10T16:20:00Z",
-        },
-      ]
-
-      setPets(mockPets)
+      const data = await petService.getPets(filters)
+      setPets(data)
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : "Erro ao carregar pets"
       setError(errorMessage)
@@ -98,103 +34,148 @@ export function usePets() {
     }
   }
 
-  const createPet = async (data: CreatePetRequest) => {
+  useEffect(() => {
+    fetchPets()
+  }, [JSON.stringify(filters)])
+
+  const createPet = async (data: CreatePetRequest): Promise<Pet | null> => {
     try {
-      // Simulação - substituir pela chamada real da API
-      const newPet: Pet = {
-        id: Date.now().toString(),
-        ...data,
-        ownerId: "current-user",
-        isActive: true,
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-      }
-
-      setPets((prev) => [newPet, ...prev])
-
+      const newPet = await petService.createPet(data)
+      setPets((prev) => [...prev, newPet])
       toast({
         title: "Sucesso",
         description: "Pet cadastrado com sucesso!",
       })
-
       return newPet
-    } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : "Erro ao cadastrar pet"
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : "Erro ao cadastrar pet"
       toast({
         title: "Erro",
         description: errorMessage,
         variant: "destructive",
       })
-      throw error
+      return null
     }
   }
 
-  const updatePet = async (id: string, data: Partial<Pet>) => {
+  const updatePet = async (id: string, data: UpdatePetRequest): Promise<Pet | null> => {
     try {
-      setPets((prev) =>
-        prev.map((pet) => (pet.id === id ? { ...pet, ...data, updatedAt: new Date().toISOString() } : pet)),
-      )
-
+      const updatedPet = await petService.updatePet(id, data)
+      setPets((prev) => prev.map((pet) => (pet.id === id ? updatedPet : pet)))
       toast({
         title: "Sucesso",
         description: "Pet atualizado com sucesso!",
       })
-    } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : "Erro ao atualizar pet"
+      return updatedPet
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : "Erro ao atualizar pet"
       toast({
         title: "Erro",
         description: errorMessage,
         variant: "destructive",
       })
-      throw error
+      return null
     }
   }
 
-  const deletePet = async (id: string) => {
+  const deletePet = async (id: string): Promise<boolean> => {
     try {
+      await petService.deletePet(id)
       setPets((prev) => prev.filter((pet) => pet.id !== id))
-
       toast({
         title: "Sucesso",
         description: "Pet removido com sucesso!",
       })
-    } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : "Erro ao remover pet"
+      return true
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : "Erro ao remover pet"
       toast({
         title: "Erro",
         description: errorMessage,
         variant: "destructive",
       })
-      throw error
+      return false
     }
   }
 
-  const getPetById = (id: string) => {
-    return pets.find((pet) => pet.id === id)
-  }
-
-  const getPetsBySpecies = (species: string) => {
-    return pets.filter((pet) => pet.species.toLowerCase() === species.toLowerCase())
-  }
-
-  const getActivePets = () => {
-    return pets.filter((pet) => pet.isActive)
-  }
-
-  useEffect(() => {
+  const refreshPets = () => {
     fetchPets()
-  }, [])
+  }
 
   return {
     pets,
     loading,
     error,
-    refetch: fetchPets,
     createPet,
     updatePet,
     deletePet,
-    getPetById,
-    getPetsBySpecies,
-    getActivePets,
+    refreshPets,
+  }
+}
+
+export function usePet(id: string) {
+  const [pet, setPet] = useState<Pet | null>(null)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+
+  const fetchPet = async () => {
+    try {
+      setLoading(true)
+      setError(null)
+      const data = await petService.getPet(id)
+      setPet(data)
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : "Erro ao carregar pet"
+      setError(errorMessage)
+      toast({
+        title: "Erro",
+        description: errorMessage,
+        variant: "destructive",
+      })
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  useEffect(() => {
+    if (id) {
+      fetchPet()
+    }
+  }, [id])
+
+  const updatePet = async (data: UpdatePetRequest): Promise<Pet | null> => {
+    if (!pet) return null
+
+    try {
+      const updatedPet = await petService.updatePet(pet.id, data)
+      setPet(updatedPet)
+      toast({
+        title: "Sucesso",
+        description: "Pet atualizado com sucesso!",
+      })
+      return updatedPet
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : "Erro ao atualizar pet"
+      toast({
+        title: "Erro",
+        description: errorMessage,
+        variant: "destructive",
+      })
+      return null
+    }
+  }
+
+  const refreshPet = () => {
+    if (id) {
+      fetchPet()
+    }
+  }
+
+  return {
+    pet,
+    loading,
+    error,
+    updatePet,
+    refreshPet,
   }
 }

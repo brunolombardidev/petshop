@@ -1,101 +1,224 @@
 import { apiClient } from "@/lib/api-client"
-import type { ApiResponse, PaginatedResponse } from "@/types/api"
 
 export interface Pet {
   id: string
-  nome: string
-  especie: "cao" | "gato" | "ave" | "peixe" | "roedor" | "reptil" | "outro"
-  raca?: string
-  idade: number
-  peso: number
-  cor: string
-  sexo: "macho" | "femea"
-  castrado: boolean
+  name: string
+  species: "dog" | "cat" | "bird" | "fish" | "rabbit" | "hamster" | "other"
+  breed: string
+  age: number
+  weight: number
+  color: string
+  gender: "male" | "female"
+  neutered: boolean
   microchip?: string
-  observacoes?: string
-  foto?: string
-  userId: string
+  imageUrl?: string
+  ownerId: string
+  medicalHistory: MedicalRecord[]
+  vaccinations: Vaccination[]
   createdAt: string
   updatedAt: string
 }
 
+export interface MedicalRecord {
+  id: string
+  petId: string
+  date: string
+  type: "consultation" | "surgery" | "exam" | "treatment" | "emergency"
+  veterinarian: string
+  clinic: string
+  diagnosis: string
+  treatment: string
+  medications: string[]
+  notes?: string
+  attachments: string[]
+  createdAt: string
+}
+
+export interface Vaccination {
+  id: string
+  petId: string
+  vaccine: string
+  date: string
+  nextDue?: string
+  veterinarian: string
+  clinic: string
+  batch?: string
+  notes?: string
+  createdAt: string
+}
+
 export interface CreatePetRequest {
-  nome: string
-  especie: "cao" | "gato" | "ave" | "peixe" | "roedor" | "reptil" | "outro"
-  raca?: string
-  idade: number
-  peso: number
-  cor: string
-  sexo: "macho" | "femea"
-  castrado: boolean
+  name: string
+  species: Pet["species"]
+  breed: string
+  age: number
+  weight: number
+  color: string
+  gender: Pet["gender"]
+  neutered: boolean
   microchip?: string
-  observacoes?: string
-  foto?: File
+  imageUrl?: string
+}
+
+export interface UpdatePetRequest extends Partial<CreatePetRequest> {}
+
+export interface CreateMedicalRecordRequest {
+  date: string
+  type: MedicalRecord["type"]
+  veterinarian: string
+  clinic: string
+  diagnosis: string
+  treatment: string
+  medications: string[]
+  notes?: string
+  attachments?: string[]
+}
+
+export interface CreateVaccinationRequest {
+  vaccine: string
+  date: string
+  nextDue?: string
+  veterinarian: string
+  clinic: string
+  batch?: string
+  notes?: string
+}
+
+export interface PetFilters {
+  species?: Pet["species"]
+  breed?: string
+  ageMin?: number
+  ageMax?: number
+  gender?: Pet["gender"]
+  neutered?: boolean
 }
 
 class PetService {
-  private readonly baseEndpoint = "/pets"
+  // Pet CRUD operations
+  async getPets(filters?: PetFilters): Promise<Pet[]> {
+    const params = new URLSearchParams()
 
-  async getPets(params?: {
-    page?: number
-    limit?: number
-    search?: string
-    especie?: string
-  }): Promise<PaginatedResponse<Pet>> {
-    return apiClient.get<PaginatedResponse<Pet>>(this.baseEndpoint, params)
+    if (filters?.species) params.append("species", filters.species)
+    if (filters?.breed) params.append("breed", filters.breed)
+    if (filters?.ageMin) params.append("ageMin", filters.ageMin.toString())
+    if (filters?.ageMax) params.append("ageMax", filters.ageMax.toString())
+    if (filters?.gender) params.append("gender", filters.gender)
+    if (filters?.neutered !== undefined) params.append("neutered", filters.neutered.toString())
+
+    const response = await apiClient.get(`/pets?${params.toString()}`)
+    return response.data
   }
 
-  async getPetById(id: string): Promise<ApiResponse<Pet>> {
-    return apiClient.get<ApiResponse<Pet>>(`${this.baseEndpoint}/${id}`)
+  async getPet(id: string): Promise<Pet> {
+    const response = await apiClient.get(`/pets/${id}`)
+    return response.data
   }
 
-  async createPet(data: CreatePetRequest): Promise<ApiResponse<Pet>> {
-    if (data.foto) {
-      const formData = new FormData()
-      formData.append("nome", data.nome)
-      formData.append("especie", data.especie)
-      if (data.raca) formData.append("raca", data.raca)
-      formData.append("idade", data.idade.toString())
-      formData.append("peso", data.peso.toString())
-      formData.append("cor", data.cor)
-      formData.append("sexo", data.sexo)
-      formData.append("castrado", data.castrado.toString())
-      if (data.microchip) formData.append("microchip", data.microchip)
-      if (data.observacoes) formData.append("observacoes", data.observacoes)
-      formData.append("foto", data.foto)
-
-      const response = await fetch(`${apiClient["baseURL"]}${this.baseEndpoint}`, {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${localStorage.getItem("auth_token")}`,
-        },
-        body: formData,
-      })
-
-      return response.json()
-    }
-
-    return apiClient.post<ApiResponse<Pet>>(this.baseEndpoint, data)
+  async createPet(data: CreatePetRequest): Promise<Pet> {
+    const response = await apiClient.post("/pets", data)
+    return response.data
   }
 
-  async updatePet(id: string, data: Partial<CreatePetRequest>): Promise<ApiResponse<Pet>> {
-    return apiClient.patch<ApiResponse<Pet>>(`${this.baseEndpoint}/${id}`, data)
+  async updatePet(id: string, data: UpdatePetRequest): Promise<Pet> {
+    const response = await apiClient.put(`/pets/${id}`, data)
+    return response.data
   }
 
-  async deletePet(id: string): Promise<ApiResponse<void>> {
-    return apiClient.delete<ApiResponse<void>>(`${this.baseEndpoint}/${id}`)
+  async deletePet(id: string): Promise<void> {
+    await apiClient.delete(`/pets/${id}`)
   }
 
-  async getPetStats(): Promise<
-    ApiResponse<{
-      totalPets: number
-      petsBySpecies: Record<string, number>
-      averageAge: number
-      castrationRate: number
-    }>
-  > {
-    return apiClient.get<ApiResponse<any>>(`${this.baseEndpoint}/stats`)
+  // Medical Records
+  async getMedicalRecords(petId: string): Promise<MedicalRecord[]> {
+    const response = await apiClient.get(`/pets/${petId}/medical-records`)
+    return response.data
+  }
+
+  async getMedicalRecord(petId: string, recordId: string): Promise<MedicalRecord> {
+    const response = await apiClient.get(`/pets/${petId}/medical-records/${recordId}`)
+    return response.data
+  }
+
+  async createMedicalRecord(petId: string, data: CreateMedicalRecordRequest): Promise<MedicalRecord> {
+    const response = await apiClient.post(`/pets/${petId}/medical-records`, data)
+    return response.data
+  }
+
+  async updateMedicalRecord(
+    petId: string,
+    recordId: string,
+    data: Partial<CreateMedicalRecordRequest>,
+  ): Promise<MedicalRecord> {
+    const response = await apiClient.put(`/pets/${petId}/medical-records/${recordId}`, data)
+    return response.data
+  }
+
+  async deleteMedicalRecord(petId: string, recordId: string): Promise<void> {
+    await apiClient.delete(`/pets/${petId}/medical-records/${recordId}`)
+  }
+
+  // Vaccinations
+  async getVaccinations(petId: string): Promise<Vaccination[]> {
+    const response = await apiClient.get(`/pets/${petId}/vaccinations`)
+    return response.data
+  }
+
+  async getVaccination(petId: string, vaccinationId: string): Promise<Vaccination> {
+    const response = await apiClient.get(`/pets/${petId}/vaccinations/${vaccinationId}`)
+    return response.data
+  }
+
+  async createVaccination(petId: string, data: CreateVaccinationRequest): Promise<Vaccination> {
+    const response = await apiClient.post(`/pets/${petId}/vaccinations`, data)
+    return response.data
+  }
+
+  async updateVaccination(
+    petId: string,
+    vaccinationId: string,
+    data: Partial<CreateVaccinationRequest>,
+  ): Promise<Vaccination> {
+    const response = await apiClient.put(`/pets/${petId}/vaccinations/${vaccinationId}`, data)
+    return response.data
+  }
+
+  async deleteVaccination(petId: string, vaccinationId: string): Promise<void> {
+    await apiClient.delete(`/pets/${petId}/vaccinations/${vaccinationId}`)
+  }
+
+  // Utility methods
+  async getBreedsBySpecies(species: Pet["species"]): Promise<string[]> {
+    const response = await apiClient.get(`/pets/breeds/${species}`)
+    return response.data
+  }
+
+  async uploadPetImage(petId: string, file: File): Promise<string> {
+    const formData = new FormData()
+    formData.append("image", file)
+
+    const response = await apiClient.post(`/pets/${petId}/image`, formData, {
+      headers: {
+        "Content-Type": "multipart/form-data",
+      },
+    })
+    return response.data.imageUrl
+  }
+
+  async getVaccinationSchedule(petId: string): Promise<Vaccination[]> {
+    const response = await apiClient.get(`/pets/${petId}/vaccination-schedule`)
+    return response.data
+  }
+
+  async getPetStatistics(): Promise<{
+    totalPets: number
+    petsBySpecies: Record<Pet["species"], number>
+    averageAge: number
+    neuteredPercentage: number
+  }> {
+    const response = await apiClient.get("/pets/statistics")
+    return response.data
   }
 }
 
 export const petService = new PetService()
+export { PetService }

@@ -1,11 +1,16 @@
 import { apiClient } from "@/lib/api-client"
-import type { ApiResponse, Client, PaginatedResponse } from "@/types/api"
+import type { ApiResponse, PaginatedResponse } from "@/types/api"
 
-export interface CreateClientRequest {
+// Tipos específicos para clientes
+export interface Client {
+  id: string
   name: string
   email: string
   phone?: string
   document?: string
+  birthDate?: string
+  avatar?: string
+  status: "active" | "inactive" | "suspended"
   address?: {
     street: string
     number: string
@@ -15,192 +20,253 @@ export interface CreateClientRequest {
     state: string
     zipCode: string
   }
+  preferences?: {
+    notifications: {
+      email: boolean
+      sms: boolean
+      push: boolean
+    }
+    language: string
+    timezone: string
+  }
+  pets?: Array<{
+    id: string
+    name: string
+    species: string
+    breed?: string
+    age?: number
+  }>
+  subscription?: {
+    planId: string
+    status: string
+    expiresAt: string
+  }
+  stats?: {
+    totalPets: number
+    totalServices: number
+    totalSpent: number
+    lastActivity: string
+  }
+  createdAt: string
+  updatedAt: string
 }
 
-export interface UpdateClientRequest extends Partial<CreateClientRequest> {}
-
 export interface ClientStats {
-  totalClients: number
-  activeClients: number
-  newClientsThisMonth: number
-  clientsWithPets: number
+  total: number
+  active: number
+  inactive: number
+  suspended: number
+  newThisMonth: number
+  totalPets: number
   averagePetsPerClient: number
-  topCities: Array<{
-    city: string
-    count: number
+  topClients: Array<{
+    id: string
+    name: string
+    totalSpent: number
+    totalServices: number
   }>
 }
 
 export class ClientService {
-  // Obter todos os clientes
-  static async getAllClients(params?: {
+  // Clientes
+  static async getClients(params?: {
     page?: number
     limit?: number
+    status?: string
     search?: string
     city?: string
     state?: string
-    isActive?: boolean
+    hasPets?: boolean
+    hasSubscription?: boolean
+    startDate?: string
+    endDate?: string
   }): Promise<PaginatedResponse<Client>> {
-    const response = await apiClient.get<ApiResponse<PaginatedResponse<Client>>>("/clients", params)
+    const response = await apiClient.get<ApiResponse<PaginatedResponse<Client>>>("/clientes", params)
     return response.data
   }
 
-  // Obter cliente por ID
-  static async getClientById(id: string): Promise<Client> {
-    const response = await apiClient.get<ApiResponse<Client>>(`/clients/${id}`)
+  static async getClient(id: string): Promise<Client> {
+    const response = await apiClient.get<ApiResponse<Client>>(`/clientes/${id}`)
     return response.data
   }
 
-  // Criar novo cliente
-  static async createClient(data: CreateClientRequest): Promise<Client> {
-    const response = await apiClient.post<ApiResponse<Client>>("/clients", data)
+  static async createClient(clientData: Omit<Client, "id" | "createdAt" | "updatedAt" | "stats">): Promise<Client> {
+    const response = await apiClient.post<ApiResponse<Client>>("/clientes", clientData)
     return response.data
   }
 
-  // Atualizar cliente
-  static async updateClient(id: string, data: UpdateClientRequest): Promise<Client> {
-    const response = await apiClient.put<ApiResponse<Client>>(`/clients/${id}`, data)
+  static async updateClient(id: string, clientData: Partial<Client>): Promise<Client> {
+    const response = await apiClient.put<ApiResponse<Client>>(`/clientes/${id}`, clientData)
     return response.data
   }
 
-  // Desativar cliente
-  static async deactivateClient(id: string): Promise<Client> {
-    const response = await apiClient.patch<ApiResponse<Client>>(`/clients/${id}/deactivate`)
-    return response.data
-  }
-
-  // Ativar cliente
-  static async activateClient(id: string): Promise<Client> {
-    const response = await apiClient.patch<ApiResponse<Client>>(`/clients/${id}/activate`)
-    return response.data
-  }
-
-  // Excluir cliente
   static async deleteClient(id: string): Promise<void> {
-    await apiClient.delete(`/clients/${id}`)
+    await apiClient.delete(`/clientes/${id}`)
   }
 
-  // Buscar clientes por nome ou email
-  static async searchClients(query: string): Promise<Client[]> {
-    const response = await apiClient.get<ApiResponse<Client[]>>(`/clients/search?q=${encodeURIComponent(query)}`)
+  static async updateClientStatus(id: string, status: Client["status"]): Promise<Client> {
+    const response = await apiClient.patch<ApiResponse<Client>>(`/clientes/${id}/status`, { status })
     return response.data
   }
 
-  // Obter pets do cliente
-  static async getClientPets(clientId: string): Promise<any[]> {
-    const response = await apiClient.get<ApiResponse<any[]>>(`/clients/${clientId}/pets`)
+  // Pets do cliente
+  static async getClientPets(clientId: string): Promise<Client["pets"]> {
+    const response = await apiClient.get<ApiResponse<Client["pets"]>>(`/clientes/${clientId}/pets`)
     return response.data
   }
 
-  // Obter histórico de serviços do cliente
-  static async getClientServiceHistory(
+  // Histórico de serviços
+  static async getClientServices(
     clientId: string,
     params?: {
       page?: number
       limit?: number
+      status?: string
       startDate?: string
       endDate?: string
     },
   ): Promise<PaginatedResponse<any>> {
-    const response = await apiClient.get<ApiResponse<PaginatedResponse<any>>>(`/clients/${clientId}/services`, params)
+    const response = await apiClient.get<ApiResponse<PaginatedResponse<any>>>(`/clientes/${clientId}/servicos`, params)
     return response.data
   }
 
-  // Obter estatísticas de clientes
-  static async getClientStats(): Promise<ClientStats> {
-    const response = await apiClient.get<ApiResponse<ClientStats>>("/clients/stats")
-    return response.data
-  }
-
-  // Exportar clientes
-  static async exportClients(
-    format: "csv" | "xlsx" = "csv",
-    filters?: {
-      city?: string
-      state?: string
-      isActive?: boolean
-      startDate?: string
-      endDate?: string
-    },
-  ): Promise<Blob> {
-    const params = new URLSearchParams({ format })
-    if (filters) {
-      Object.entries(filters).forEach(([key, value]) => {
-        if (value !== undefined) {
-          params.append(key, String(value))
-        }
-      })
-    }
-    return apiClient.download(`/clients/export?${params.toString()}`)
-  }
-
-  // Importar clientes
-  static async importClients(file: File): Promise<{
-    success: number
-    errors: Array<{ row: number; message: string }>
-  }> {
-    const formData = new FormData()
-    formData.append("file", file)
-
-    const response = await apiClient.upload<
-      ApiResponse<{
-        success: number
-        errors: Array<{ row: number; message: string }>
-      }>
-    >("/clients/import", formData)
-
-    return response.data
-  }
-
-  // Obter clientes por cidade
-  static async getClientsByCity(
-    city: string,
+  // Histórico financeiro
+  static async getClientFinancialHistory(
+    clientId: string,
     params?: {
       page?: number
       limit?: number
+      type?: string
+      startDate?: string
+      endDate?: string
     },
-  ): Promise<PaginatedResponse<Client>> {
-    const response = await apiClient.get<ApiResponse<PaginatedResponse<Client>>>(
-      `/clients/by-city/${encodeURIComponent(city)}`,
+  ): Promise<PaginatedResponse<any>> {
+    const response = await apiClient.get<ApiResponse<PaginatedResponse<any>>>(
+      `/clientes/${clientId}/financeiro`,
       params,
     )
     return response.data
   }
 
-  // Obter clientes aniversariantes
-  static async getBirthdayClients(month?: number): Promise<Client[]> {
-    const params = month ? { month } : {}
-    const response = await apiClient.get<ApiResponse<Client[]>>("/clients/birthdays", params)
+  // Estatísticas
+  static async getClientStats(): Promise<ClientStats> {
+    const response = await apiClient.get<ApiResponse<ClientStats>>("/clientes/estatisticas")
     return response.data
   }
 
-  // Enviar notificação para cliente
-  static async sendNotificationToClient(
+  static async getClientActivity(
     clientId: string,
-    notification: {
-      title: string
-      message: string
-      type: "info" | "success" | "warning" | "error"
+    params?: {
+      startDate?: string
+      endDate?: string
     },
-  ): Promise<void> {
-    await apiClient.post(`/clients/${clientId}/notify`, notification)
-  }
-
-  // Obter notas do cliente
-  static async getClientNotes(clientId: string): Promise<
+  ): Promise<
     Array<{
-      id: string
-      content: string
-      createdBy: string
-      createdAt: string
+      date: string
+      activity: string
+      description: string
+      metadata?: any
     }>
   > {
-    const response = await apiClient.get<ApiResponse<any[]>>(`/clients/${clientId}/notes`)
+    const response = await apiClient.get<
+      ApiResponse<
+        Array<{
+          date: string
+          activity: string
+          description: string
+          metadata?: any
+        }>
+      >
+    >(`/clientes/${clientId}/atividades`, params)
     return response.data
   }
 
-  // Adicionar nota ao cliente
-  static async addClientNote(clientId: string, content: string): Promise<void> {
-    await apiClient.post(`/clients/${clientId}/notes`, { content })
+  // Comunicação
+  static async sendNotification(
+    clientId: string,
+    notification: {
+      type: "email" | "sms" | "push"
+      title: string
+      message: string
+      data?: any
+    },
+  ): Promise<{ success: boolean; messageId?: string }> {
+    const response = await apiClient.post<ApiResponse<{ success: boolean; messageId?: string }>>(
+      `/clientes/${clientId}/notificar`,
+      notification,
+    )
+    return response.data
+  }
+
+  static async sendBulkNotification(notification: {
+    type: "email" | "sms" | "push"
+    title: string
+    message: string
+    filters?: {
+      status?: string
+      city?: string
+      state?: string
+      hasPets?: boolean
+      hasSubscription?: boolean
+    }
+    data?: any
+  }): Promise<{ success: boolean; sent: number; failed: number }> {
+    const response = await apiClient.post<ApiResponse<{ success: boolean; sent: number; failed: number }>>(
+      "/clientes/notificar-em-massa",
+      notification,
+    )
+    return response.data
+  }
+
+  // Exportação
+  static async exportClients(params?: {
+    format?: "csv" | "xlsx"
+    filters?: {
+      status?: string
+      city?: string
+      state?: string
+      hasPets?: boolean
+      hasSubscription?: boolean
+      startDate?: string
+      endDate?: string
+    }
+  }): Promise<Blob> {
+    const response = await fetch(`${apiClient["baseURL"]}/clientes/exportar`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${localStorage.getItem("auth_token")}`,
+      },
+      body: JSON.stringify(params),
+    })
+
+    if (!response.ok) {
+      throw new Error("Erro ao exportar clientes")
+    }
+
+    return response.blob()
+  }
+
+  // Importação
+  static async importClients(file: File): Promise<{
+    success: number
+    failed: number
+    errors: Array<{ row: number; error: string }>
+  }> {
+    const formData = new FormData()
+    formData.append("file", file)
+
+    const response = await apiClient.post<
+      ApiResponse<{
+        success: number
+        failed: number
+        errors: Array<{ row: number; error: string }>
+      }>
+    >("/clientes/importar", formData, {
+      headers: {
+        "Content-Type": "multipart/form-data",
+      },
+    })
+    return response.data
   }
 }
